@@ -28,7 +28,7 @@ export function HistoryPanel({ history, onReset, hasStateMachine }: Props) {
             <li key={entry.step} className={styles.entry}>
               <span className={styles.step}>{entry.step}.</span>
               <span className={styles.from}>{entry.from}</span>
-              <span className={styles.arrow}>--{entry.trigger}--></span>
+              <span className={styles.arrow}>--{entry.trigger}--&gt;</span>
               <span className={styles.to}>{entry.to}</span>
             </li>
           ))}

@@ -12,18 +12,15 @@ export default function App() {
   const [currentState, setCurrentState] = useState("")
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
 
   async function handleGenerate(text: string) {
     setLoading(true)
-    setError("")
     try {
       const sm = await parseStateMachine(text)
       setStateMachine(sm)
       setCurrentState(sm.initialState)
       setHistory([])
-    } catch (e) {
-      setError("FAILED")
+    } catch {
     } finally {
       setLoading(false)
     }
