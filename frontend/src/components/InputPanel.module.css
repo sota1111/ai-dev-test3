@@ -1,0 +1,39 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  border-bottom: 2px solid #4a90d9;
+  padding-bottom: 6px;
+}
+
+.textarea {
+  flex: 1;
+  min-height: 200px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.generateBtn {
+  background: #4a90d9;
+  color: white;
+  padding: 10px;
+  width: 100%;
+  font-size: 0.95rem;
+}
+
+.generateBtn:hover:not(:disabled) {
+  background: #357abd;
+}
+
+.generateBtn:disabled {
+  background: #aac8ea;
+  cursor: not-allowed;
+  transform: none;
+}
