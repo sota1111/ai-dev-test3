@@ -1,0 +1,39 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  border-bottom: 2px solid #4a90d9;
+  padding-bottom: 6px;
+}
+
+.diagram {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8px;
+}
+
+.diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 20px;
+}
