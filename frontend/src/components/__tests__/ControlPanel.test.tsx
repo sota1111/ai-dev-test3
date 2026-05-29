@@ -27,7 +27,7 @@ describe('ControlPanel', () => {
         onTrigger={() => {}}
       />
     )
-    expect(screen.getByText('点灯')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /点灯/ })).toBeInTheDocument()
     expect(screen.getByText('→ 青')).toBeInTheDocument()
   })
 
@@ -61,7 +61,7 @@ describe('ControlPanel', () => {
         onTrigger={onTrigger}
       />
     )
-    fireEvent.click(screen.getByText('点灯'))
+    fireEvent.click(screen.getByRole('button', { name: /点灯/ }))
     expect(onTrigger).toHaveBeenCalledWith(mockStateMachine.transitions[0])
   })
 })
