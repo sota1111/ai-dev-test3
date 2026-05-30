@@ -66,8 +66,10 @@ export default function App() {
     const entry: HistoryEntry = {
       step: history.length + 1,
       from: currentState,
+      fromParent: currentParentState,
       trigger: transition.trigger,
-      to: nextState
+      to: nextState,
+      toParent: nextParent,
     }
     setHistory(prev => prev.concat(entry))
     setCurrentState(nextState)

@@ -24,14 +24,22 @@ export function HistoryPanel({ history, onReset, hasStateMachine }: Props) {
         </p>
       ) : (
         <ol className={styles.list}>
-          {history.map(entry => (
-            <li key={entry.step} className={styles.entry}>
-              <span className={styles.step}>{entry.step}.</span>
-              <span className={styles.from}>{entry.from}</span>
-              <span className={styles.arrow}>--{entry.trigger}--&gt;</span>
-              <span className={styles.to}>{entry.to}</span>
-            </li>
-          ))}
+          {history.map(entry => {
+            const fromDisplay = entry.fromParent
+              ? `${entry.fromParent} / ${entry.from}`
+              : entry.from
+            const toDisplay = entry.toParent
+              ? `${entry.toParent} / ${entry.to}`
+              : entry.to
+            return (
+              <li key={entry.step} className={styles.entry}>
+                <span className={styles.step}>{entry.step}.</span>
+                <span className={styles.from}>{fromDisplay}</span>
+                <span className={styles.arrow}>--{entry.trigger}--&gt;</span>
+                <span className={styles.to}>{toDisplay}</span>
+              </li>
+            )
+          })}
         </ol>
       )}
     </div>
