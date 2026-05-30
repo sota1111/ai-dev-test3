@@ -90,7 +90,7 @@ export function filterStateMachine(
       const toInParent = parentChildSet.has(t.to) || t.to === currentParent || t.to === '$PREVIOUS'
       return fromInParent || toInParent
     })
-    const relevantStates = new Set()
+    const relevantStates = new Set<string>()
     relatedTransitions.forEach(t => {
       if (!parentChildSet.has(t.from) && t.from !== currentParent) relevantStates.add(t.from)
       if (t.to !== '$PREVIOUS' && !parentChildSet.has(t.to) && t.to !== currentParent) relevantStates.add(t.to)
@@ -147,14 +147,14 @@ export function filterStateMachine(
       return toTarget || fromTarget || isReturn
     })
 
-    const relevantStates = new Set()
+    const relevantStates = new Set<string>()
     relatedTransitions.forEach(t => {
       if (!targetParentNames.has(t.from)) relevantStates.add(t.from)
       if (t.to !== '$PREVIOUS' && !targetParentNames.has(t.to)) relevantStates.add(t.to)
     })
     targetParents.forEach(p => p.children.forEach(c => relevantStates.add(c)))
 
-    const initState = relevantStates.has(sm.initialState) ? sm.initialState : (Array.from(relevantStates)[0] ?? sm.initialState)
+    const initState: string = relevantStates.has(sm.initialState) ? sm.initialState : (Array.from(relevantStates)[0] ?? sm.initialState)
     return {
       ...sm,
       states: sm.states.filter(s => relevantStates.has(s)),

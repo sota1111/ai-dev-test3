@@ -18,16 +18,16 @@ function isParentName(name: string, parentStates: ParentState[]): boolean {
 }
 
 export default function App() {
-  const [stateMachine, setStateMachine] = useState(null as any)
+  const [stateMachine, setStateMachine] = useState<StateMachine | null>(null)
   const [currentState, setCurrentState] = useState("")
-  const [currentParentState, setCurrentParentState] = useState(null as any)
-  const [history, setHistory] = useState([] as any[])
-  const [returnStack, setReturnStack] = useState([] as any[])
+  const [currentParentState, setCurrentParentState] = useState<string | null>(null)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [returnStack, setReturnStack] = useState<{ state: string; parentState: string | null }[]>([])
   const [loading, setLoading] = useState(false)
   const [modifyLoading, setModifyLoading] = useState(false)
-  const [latestDiff, setLatestDiff] = useState(null as any)
-  const [modifyHistory, setModifyHistory] = useState([] as any[])
-  const [displayMode, setDisplayMode] = useState('all' as any)
+  const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
+  const [modifyHistory, setModifyHistory] = useState<ModifyHistoryEntry[]>([])
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('all')
 
   function initSimulation(sm: StateMachine) {
     const parents = sm.parentStates ?? []
