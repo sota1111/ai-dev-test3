@@ -16,7 +16,8 @@ SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
     {
       "name": "親状態名",
       "children": ["状態1", "状態2"],
-      "initialChild": "状態1"
+      "initialChild": "状態1",
+      "isInterrupt": false
     }
   ],
   "transitions": [
@@ -27,6 +28,12 @@ SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
 ルール:
 - parentStates には、複数の状態をまとめる「グループ（親状態）」が存在する場合のみ値を入れてください。
   階層がない場合は空配列 [] を返してください。
+- isInterrupt: 割込み状態（例: 一時停止中、異常復旧中）には "isInterrupt": true を設定してください。
+  割込み状態とは、別の親状態から中断してその状態に入り、完了後に元の状態へ戻るような状態です。
+- $PREVIOUS: 「停止前の状態に戻る」「異常前の状態に戻る」といった動的な戻り遷移には、
+  "to": "$PREVIOUS" を使用してください。
+  例: { "from": "再開確認中", "trigger": "再開許可", "to": "$PREVIOUS" }
+       { "from": "復旧確認中", "trigger": "復旧OK", "to": "$PREVIOUS" }
 - initialChild: 親状態に入ったとき最初に遷移する子状態名を必ず指定してください。
 - 親状態配下のどの子状態からも共通して使えるトリガーは、from に「親状態名」を使ってください。
   例: { "from": "注文処理中", "trigger": "キャンセル", "to": "キャンセル済み" }
@@ -46,7 +53,8 @@ MODIFY_SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
       {
         "name": "親状態名",
         "children": ["状態1", "状態2"],
-        "initialChild": "状態1"
+      "initialChild": "状態1",
+      "isInterrupt": false
       }
     ],
     "transitions": [
@@ -69,6 +77,12 @@ MODIFY_SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
 - ユーザーが依頼した内容のみを反映すること。
 - diff には変更内容のみを記録すること（変更のない項目は空配列）。
 - parentStates には、複数の状態をまとめる「グループ（親状態）」が存在する場合のみ値を入れること。階層がない場合は空配列 [] を返すこと。
+- isInterrupt: 割込み状態（例: 一時停止中、異常復旧中）には "isInterrupt": true を設定してください。
+  割込み状態とは、別の親状態から中断してその状態に入り、完了後に元の状態へ戻るような状態です。
+- $PREVIOUS: 「停止前の状態に戻る」「異常前の状態に戻る」といった動的な戻り遷移には、
+  "to": "$PREVIOUS" を使用してください。
+  例: { "from": "再開確認中", "trigger": "再開許可", "to": "$PREVIOUS" }
+       { "from": "復旧確認中", "trigger": "復旧OK", "to": "$PREVIOUS" }
 - initialChild: 親状態に入ったとき最初に遷移する子状態名を必ず指定すること。
 - 親状態配下のどの子状態からも共通して使えるトリガーは、from に「親状態名」を使うこと。
 - modifiedParentStates には、子状態が追加・削除された親状態のみ記録すること。

@@ -32,10 +32,6 @@ describe('ControlPanel', () => {
   })
 
   it('does not show trigger buttons for other states', () => {
-    // currentState="青" but transitions from "青" is "点灯" -> "黄"
-    // The requirement says: currentState="青" but only "赤" has transitions, expect no trigger buttons
-    // Actually mockStateMachine HAS transitions from "青".
-    // Let's make a specific mock for this test case.
     const limitedSM: StateMachine = {
       initialState: '赤',
       states: ['赤', '青'],
@@ -85,9 +81,30 @@ describe('ControlPanel', () => {
       />
     )
     expect(screen.getByText('問い合わせ対応')).toBeInTheDocument()
-    // '受付中' appears in Current State, State List, and Transition List.
-    // '担当者確認中' appears in State List and Transition List.
     expect(screen.getAllByText('受付中').length).toBeGreaterThan(0)
     expect(screen.getAllByText('担当者確認中').length).toBeGreaterThan(0)
+  })
+
+  it('shows $PREVIOUS trigger as "再開" style button', () => {
+    const interruptSM: StateMachine = {
+      initialState: '停止保持中',
+      states: ['停止保持中', '再開確認中'],
+      parentStates: [
+        { name: '一時停止中', children: ['停止保持中', '再開確認中'], initialChild: '停止保持中', isInterrupt: true }
+      ],
+      transitions: [
+        { from: '停止保持中', trigger: '再開要求', to: '再開確認中' },
+        { from: '再開確認中', trigger: '再開許可', to: '$PREVIOUS' },
+      ],
+    }
+    render(
+      <ControlPanel
+        stateMachine={interruptSM}
+        currentState="再開確認中"
+        currentParentState="一時停止中"
+        onTrigger={() => {}}
+      />
+    )
+    expect(screen.getByRole('button', { name: /再開許可/ })).toBeInTheDocument()
   })
 })
