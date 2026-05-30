@@ -6,7 +6,7 @@ import { HistoryPanel } from "./components/HistoryPanel"
 import { ModifyPanel } from "./components/ModifyPanel"
 import { DiffPanel } from "./components/DiffPanel"
 import { parseStateMachine, modifyStateMachine } from "./api/client"
-import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry } from "./types/stateMachine"
+import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry, DisplayMode } from "./types/stateMachine"
 import styles from "./App.module.css"
 
 function getParentOf(stateName: string, parentStates: ParentState[]): string | null {
@@ -27,6 +27,7 @@ export default function App() {
   const [modifyLoading, setModifyLoading] = useState(false)
   const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
   const [modifyHistory, setModifyHistory] = useState<ModifyHistoryEntry[]>([])
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('all')
 
   function initSimulation(sm: StateMachine) {
     const parents = sm.parentStates ?? []
@@ -51,6 +52,7 @@ export default function App() {
       initSimulation(sm)
       setLatestDiff(null)
       setModifyHistory([])
+      setDisplayMode('all')
     } catch {
     } finally {
       setLoading(false)
@@ -128,7 +130,13 @@ export default function App() {
       <h1>Simulator</h1>
       <main className={styles.main}>
         <InputPanel onGenerate={handleGenerate} loading={loading} />
-        <DiagramPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} />
+        <DiagramPanel
+          stateMachine={stateMachine}
+          currentState={currentState}
+          currentParentState={currentParentState}
+          displayMode={displayMode}
+          onDisplayModeChange={setDisplayMode}
+        />
         <ControlPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} onTrigger={handleTrigger} />
       </main>
       {stateMachine && (
