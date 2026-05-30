@@ -23,6 +23,11 @@ test.describe('State Machine Simulator', () => {
     await page.fill('textarea', '信号機の仕様')
     await page.click('button:has-text("状態遷移を生成")')
 
+    // 図の描画に失敗しました が表示されていないことを確認
+    await expect(page.locator('text=図の描画に失敗しました')).not.toBeVisible()
+    // SVG が diagram-container 内に存在することを確認
+    await expect(page.locator('[data-testid="diagram-container"] svg')).toBeVisible({ timeout: 5000 })
+
     await expect(page.locator('text=現在状態 >> .. >> div')).toHaveText('赤')
     await page.screenshot({ path: 'e2e/screenshots/traffic-light/step0.png' })
 
@@ -63,6 +68,11 @@ test.describe('State Machine Simulator', () => {
     await page.fill('textarea', 'ドアの仕様')
     await page.click('button:has-text("状態遷移を生成")')
 
+    // 図の描画に失敗しました が表示されていないことを確認
+    await expect(page.locator('text=図の描画に失敗しました')).not.toBeVisible()
+    // SVG が diagram-container 内に存在することを確認
+    await expect(page.locator('[data-testid="diagram-container"] svg')).toBeVisible({ timeout: 5000 })
+
     await expect(page.locator('text=現在状態 >> .. >> div')).toHaveText('閉')
     await page.screenshot({ path: 'e2e/screenshots/door/step0.png' })
 
@@ -99,6 +109,11 @@ test.describe('State Machine Simulator', () => {
     await page.goto('/')
     await page.fill('textarea', '自販機の仕様')
     await page.click('button:has-text("状態遷移を生成")')
+
+    // 図の描画に失敗しました が表示されていないことを確認
+    await expect(page.locator('text=図の描画に失敗しました')).not.toBeVisible()
+    // SVG が diagram-container 内に存在することを確認
+    await expect(page.locator('[data-testid="diagram-container"] svg')).toBeVisible({ timeout: 5000 })
 
     await expect(page.locator('text=現在状態 >> .. >> div')).toHaveText('待機')
     await page.screenshot({ path: 'e2e/screenshots/vending-machine/step0.png' })
