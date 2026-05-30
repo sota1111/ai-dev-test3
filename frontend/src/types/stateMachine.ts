@@ -25,3 +25,20 @@ export interface HistoryEntry {
   to: string
   toParent?: string | null
 }
+
+export interface StateMachineDiff {
+  addedStates: string[]
+  removedStates: string[]
+  addedTransitions: { from: string; trigger: string; to: string }[]
+  removedTransitions: { from: string; trigger: string; to: string }[]
+  addedParentStates: string[]
+  removedParentStates: string[]
+  modifiedParentStates: { name: string; addedChildren: string[]; removedChildren: string[] }[]
+}
+
+export interface ModifyHistoryEntry {
+  step: number
+  request: string
+  diff: StateMachineDiff
+  timestamp: string
+}

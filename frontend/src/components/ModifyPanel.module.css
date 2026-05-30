@@ -1,0 +1,47 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: #f0f7ff;
+  border: 1px solid #b3d4ff;
+  border-radius: 8px;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a5fa8;
+  margin: 0;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #b3d4ff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.modifyBtn {
+  align-self: flex-start;
+  padding: 8px 20px;
+  background: #1a5fa8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.modifyBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modifyBtn:hover:not(:disabled) {
+  background: #154e8a;
+}
