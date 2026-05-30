@@ -24,6 +24,22 @@ describe('HistoryPanel', () => {
     expect(screen.getByText('青')).toBeInTheDocument()
   })
 
+  it('shows parent state context in history entries', () => {
+    const history = [
+      {
+        step: 1,
+        from: '注文受付',
+        fromParent: '注文処理中',
+        trigger: '注文確定',
+        to: '在庫確認',
+        toParent: '注文処理中',
+      }
+    ]
+    render(<HistoryPanel history={history} onReset={() => {}} hasStateMachine={true} />)
+    expect(screen.getByText('注文処理中 / 注文受付')).toBeInTheDocument()
+    expect(screen.getByText('注文処理中 / 在庫確認')).toBeInTheDocument()
+  })
+
   it('shows reset button when state machine exists', () => {
     render(<HistoryPanel history={[]} onReset={() => {}} hasStateMachine={true} />)
     expect(screen.getByText('リセット')).toBeInTheDocument()

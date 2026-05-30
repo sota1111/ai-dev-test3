@@ -20,6 +20,8 @@ export interface StateMachine {
 export interface HistoryEntry {
   step: number
   from: string
+  fromParent?: string | null
   trigger: string
   to: string
+  toParent?: string | null
 }
