@@ -107,4 +107,72 @@ describe('ControlPanel', () => {
     )
     expect(screen.getByRole('button', { name: /再開許可/ })).toBeInTheDocument()
   })
+
+  it('shows $PREVIOUS destination as "前の状態へ戻る"', () => {
+    const interruptSM: StateMachine = {
+      initialState: '停止保持中',
+      states: ['停止保持中', '再開確認中'],
+      parentStates: [
+        { name: '一時停止中', children: ['停止保持中', '再開確認中'], initialChild: '停止保持中', isInterrupt: true }
+      ],
+      transitions: [
+        { from: '再開確認中', trigger: '再開許可', to: '$PREVIOUS' },
+      ],
+    }
+    render(
+      <ControlPanel
+        stateMachine={interruptSM}
+        currentState="再開確認中"
+        currentParentState="一時停止中"
+        onTrigger={() => {}}
+      />
+    )
+    expect(screen.getByText(/前の状態へ戻る/)).toBeInTheDocument()
+  })
+
+  it('shows parent state destination as "親名 / 初期子状態"', () => {
+    const sm: StateMachine = {
+      initialState: '作業中',
+      states: ['作業中', '停止保持中'],
+      parentStates: [
+        { name: '一時停止中', children: ['停止保持中'], initialChild: '停止保持中', isInterrupt: true }
+      ],
+      transitions: [
+        { from: '作業中', trigger: '一時停止', to: '一時停止中' },
+      ],
+    }
+    render(
+      <ControlPanel
+        stateMachine={sm}
+        currentState="作業中"
+        onTrigger={() => {}}
+      />
+    )
+    expect(screen.getByText(/一時停止中 \/ 停止保持中/)).toBeInTheDocument()
+  })
+
+  it('shows section headers when both child and parent triggers exist', () => {
+    const sm: StateMachine = {
+      initialState: '作業中',
+      states: ['作業中', '完了', '停止保持中'],
+      parentStates: [
+        { name: '処理中', children: ['作業中', '完了'] },
+        { name: '一時停止中', children: ['停止保持中'], isInterrupt: true }
+      ],
+      transitions: [
+        { from: '作業中', trigger: '完了', to: '完了' },
+        { from: '処理中', trigger: '一時停止', to: '一時停止中' },
+      ],
+    }
+    render(
+      <ControlPanel
+        stateMachine={sm}
+        currentState="作業中"
+        currentParentState="処理中"
+        onTrigger={() => {}}
+      />
+    )
+    expect(screen.getByText('現在状態専用トリガー')).toBeInTheDocument()
+    expect(screen.getByText('親状態共通トリガー')).toBeInTheDocument()
+  })
 })

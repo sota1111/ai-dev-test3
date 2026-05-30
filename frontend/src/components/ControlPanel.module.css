@@ -151,3 +151,14 @@
   color: #e65100;
   font-weight: bold;
 }
+
+.groupHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 6px 0 2px;
+  padding-bottom: 2px;
+  border-bottom: 1px solid #ddd;
+}

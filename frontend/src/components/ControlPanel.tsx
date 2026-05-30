@@ -1,4 +1,4 @@
-import type { StateMachine, Transition } from "../types/stateMachine"
+import type { StateMachine, Transition, ParentState } from "../types/stateMachine"
 import styles from "./ControlPanel.module.css"
 
 interface Props {
@@ -6,6 +6,18 @@ interface Props {
   currentState: string
   currentParentState?: string | null
   onTrigger: (transition: Transition) => void
+}
+
+function resolveDestination(to: string, parentStates: ParentState[]): string {
+  if (to === "$PREVIOUS") return "前の状態へ戻る"
+  const parent = parentStates.find(p => p.name === to)
+  if (parent) {
+    const child = parent.initialChild ?? parent.children[0]
+    return child ? `${to} / ${child}` : to
+  }
+  const ownerParent = parentStates.find(p => p.children.includes(to))
+  if (ownerParent) return `${ownerParent.name} / ${to}`
+  return to
 }
 
 export function ControlPanel({ stateMachine, currentState, currentParentState = null, onTrigger }: Props) {
@@ -17,19 +29,21 @@ export function ControlPanel({ stateMachine, currentState, currentParentState = 
     )
   }
 
+  const parentStates = stateMachine.parentStates ?? []
+  const childTransitions = stateMachine.transitions.filter(t => t.from === currentState)
   const parentTransitions = currentParentState
     ? stateMachine.transitions.filter(t => t.from === currentParentState)
     : []
-  const childTransitions = stateMachine.transitions.filter(t => t.from === currentState)
-  const availableTransitions = [...childTransitions, ...parentTransitions]
 
-  const parentStates = stateMachine.parentStates ?? []
   const childStateNames = new Set(parentStates.flatMap(p => p.children))
   const flatStates = stateMachine.states.filter(s => !childStateNames.has(s))
 
   const currentStateDisplay = currentParentState
     ? `${currentParentState} > ${currentState}`
     : currentState
+
+  const showHeaders = childTransitions.length > 0 && parentTransitions.length > 0
+  const allEmpty = childTransitions.length === 0 && parentTransitions.length === 0
 
   return (
     <div className={styles.panel}>
@@ -71,24 +85,32 @@ export function ControlPanel({ stateMachine, currentState, currentParentState = 
 
       <section className={styles.section}>
         <h2 className={styles.title}>実行可能なトリガー</h2>
-        {availableTransitions.length === 0 ? (
+        {allEmpty ? (
           <p className={styles.noTrigger}>実行可能なトリガーはありません（終端状態）</p>
         ) : (
           <div className={styles.triggers}>
-            {availableTransitions.map((t, i) => {
-              const isCommon = t.from === currentParentState
-              return (
-                <button
-                  key={i}
-                  className={styles.triggerBtn}
-                  onClick={() => onTrigger(t)}
-                >
-                  {isCommon && <span className={styles.commonLabel}>(共通) </span>}
-                  {t.trigger}
-                  <span className={styles.arrow}> → {t.to}</span>
-                </button>
-              )
-            })}
+            {showHeaders && <h3 className={styles.groupHeader}>現在状態専用トリガー</h3>}
+            {childTransitions.map((t, i) => (
+              <button
+                key={`child-${i}`}
+                className={styles.triggerBtn}
+                onClick={() => onTrigger(t)}
+              >
+                {t.trigger}
+                <span className={styles.arrow}> → {resolveDestination(t.to, parentStates)}</span>
+              </button>
+            ))}
+            {showHeaders && <h3 className={styles.groupHeader}>親状態共通トリガー</h3>}
+            {parentTransitions.map((t, i) => (
+              <button
+                key={`parent-${i}`}
+                className={styles.triggerBtn}
+                onClick={() => onTrigger(t)}
+              >
+                {t.trigger}
+                <span className={styles.arrow}> → {resolveDestination(t.to, parentStates)}</span>
+              </button>
+            ))}
           </div>
         )}
       </section>
