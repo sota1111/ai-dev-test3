@@ -32,9 +32,7 @@ describe('HistoryPanel', () => {
   it('calls onReset when reset button clicked', () => {
     const onReset = vi.fn()
     render(<HistoryPanel history={[]} onReset={onReset} hasStateMachine={true} />)
-    fireEvent.click(screen.getByText('リreset' ? 'リセット' : 'リセット')) // Match the text exactly
-    // Wait, the component uses "リセット"
     fireEvent.click(screen.getByText('リセット'))
-    expect(onReset).toHaveBeenCalled()
+    expect(onReset).toHaveBeenCalledTimes(1)
   })
 })
