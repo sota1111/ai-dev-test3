@@ -3,8 +3,10 @@ import { InputPanel } from "./components/InputPanel"
 import { DiagramPanel } from "./components/DiagramPanel"
 import { ControlPanel } from "./components/ControlPanel"
 import { HistoryPanel } from "./components/HistoryPanel"
-import { parseStateMachine } from "./api/client"
-import type { StateMachine, Transition, HistoryEntry, ParentState } from "./types/stateMachine"
+import { ModifyPanel } from "./components/ModifyPanel"
+import { DiffPanel } from "./components/DiffPanel"
+import { parseStateMachine, modifyStateMachine } from "./api/client"
+import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry } from "./types/stateMachine"
 import styles from "./App.module.css"
 
 function getParentOf(stateName: string, parentStates: ParentState[]): string | null {
@@ -21,6 +23,9 @@ export default function App() {
   const [currentParentState, setCurrentParentState] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [modifyLoading, setModifyLoading] = useState(false)
+  const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
+  const [modifyHistory, setModifyHistory] = useState<ModifyHistoryEntry[]>([])
 
   function initSimulation(sm: StateMachine) {
     const parents = sm.parentStates ?? []
@@ -42,9 +47,32 @@ export default function App() {
       const sm = await parseStateMachine(text)
       setStateMachine(sm)
       initSimulation(sm)
+      setLatestDiff(null)
+      setModifyHistory([])
     } catch {
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleModify(request: string) {
+    if (!stateMachine) return
+    setModifyLoading(true)
+    try {
+      const { updatedMachine, diff } = await modifyStateMachine(stateMachine, request)
+      setStateMachine(updatedMachine)
+      initSimulation(updatedMachine)
+      setLatestDiff(diff)
+      const entry: ModifyHistoryEntry = {
+        step: modifyHistory.length + 1,
+        request,
+        diff,
+        timestamp: new Date().toLocaleTimeString("ja-JP"),
+      }
+      setModifyHistory(prev => prev.concat(entry))
+    } catch {
+    } finally {
+      setModifyLoading(false)
     }
   }
 
@@ -90,6 +118,12 @@ export default function App() {
         <DiagramPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} />
         <ControlPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} onTrigger={handleTrigger} />
       </main>
+      {stateMachine && (
+        <div className={styles.footer}>
+          <ModifyPanel onModify={handleModify} loading={modifyLoading} />
+          <DiffPanel latestDiff={latestDiff} history={modifyHistory} />
+        </div>
+      )}
       <HistoryPanel history={history} onReset={handleReset} hasStateMachine={stateMachine !== null} />
     </div>
   )

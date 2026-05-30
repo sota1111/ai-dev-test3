@@ -1,0 +1,118 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
+  margin: 0 0 8px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.latestDiff {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #ddd;
+}
+
+.diffContent {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.list {
+  margin: 2px 0 2px 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.added {
+  color: #1a7a1a;
+}
+
+.removed {
+  color: #c00;
+  text-decoration: line-through;
+}
+
+.addedLabel {
+  color: #1a7a1a;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.removedLabel {
+  color: #c00;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.modifiedLabel {
+  color: #8a6a00;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.noChange {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.historySection {
+  background: #fff;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #ddd;
+}
+
+.historyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.historyItem {
+  padding: 8px;
+  background: #f8f8f8;
+  border-radius: 4px;
+  border-left: 3px solid #b3d4ff;
+}
+
+.historyHeader {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.historyStep {
+  font-weight: 600;
+  color: #1a5fa8;
+  font-size: 0.85rem;
+}
+
+.historyRequest {
+  font-size: 0.85rem;
+  color: #333;
+  flex: 1;
+}
+
+.historyTime {
+  font-size: 0.75rem;
+  color: #aaa;
+}
