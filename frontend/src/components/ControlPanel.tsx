@@ -4,11 +4,11 @@ import styles from "./ControlPanel.module.css"
 interface Props {
   stateMachine: StateMachine | null
   currentState: string
-  currentParentState: string | null
+  currentParentState?: string | null
   onTrigger: (transition: Transition) => void
 }
 
-export function ControlPanel({ stateMachine, currentState, currentParentState, onTrigger }: Props) {
+export function ControlPanel({ stateMachine, currentState, currentParentState = null, onTrigger }: Props) {
   if (!stateMachine) {
     return (
       <div className={styles.panel}>

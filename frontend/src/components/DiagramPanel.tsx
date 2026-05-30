@@ -11,7 +11,7 @@ interface Props {
   currentParentState: string | null
 }
 
-export function buildMermaid(sm: StateMachine, current: string, currentParent: string | null): string {
+export function buildMermaid(sm: StateMachine, current: string, currentParent: string | null = null): string {
   // Build ASCII ID mapping for each state name
   const idMap = new Map<string, string>()
   sm.states.forEach((state, index) => {
