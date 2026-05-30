@@ -8,9 +8,10 @@ mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose
 interface Props {
   stateMachine: StateMachine | null
   currentState: string
+  currentParentState: string | null
 }
 
-export function buildMermaid(sm: StateMachine, current: string): string {
+export function buildMermaid(sm: StateMachine, current: string, currentParent: string | null = null): string {
   // Build ASCII ID mapping for each state name
   const idMap = new Map<string, string>()
   sm.states.forEach((state, index) => {
@@ -65,6 +66,15 @@ export function buildMermaid(sm: StateMachine, current: string): string {
     lines.push(`  ${idMap.get(t.from)} --> ${idMap.get(t.to)} : ${label}`)
   }
 
+  // Current parent state highlight
+  if (currentParent) {
+    const parentIndex = (sm.parentStates ?? []).findIndex(p => p.name === currentParent)
+    if (parentIndex >= 0) {
+      lines.push('  classDef currentParent fill:#ffe0b2,stroke:#e65100,stroke-width:3px')
+      lines.push(`  class p${parentIndex} currentParent`)
+    }
+  }
+
   // Current state highlight
   if (current && idMap.has(current)) {
     lines.push('  classDef current fill:#ff9,stroke:#f90,stroke-width:3px,color:#000')
@@ -76,13 +86,13 @@ export function buildMermaid(sm: StateMachine, current: string): string {
 
 let diagramId = 0
 
-export function DiagramPanel({ stateMachine, currentState }: Props) {
+export function DiagramPanel({ stateMachine, currentState, currentParentState }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!stateMachine || !containerRef.current) return
     const id = 'mermaid-diagram-' + (++diagramId)
-    const definition = buildMermaid(stateMachine, currentState)
+    const definition = buildMermaid(stateMachine, currentState, currentParentState)
     mermaid.render(id, definition).then(({ svg }) => {
       if (containerRef.current) {
         containerRef.current.innerHTML = svg
@@ -92,7 +102,7 @@ export function DiagramPanel({ stateMachine, currentState }: Props) {
         containerRef.current.innerHTML = '<p style="color:red">図の描画に失敗しました</p>'
       }
     })
-  }, [stateMachine, currentState])
+  }, [stateMachine, currentState, currentParentState])
 
   return (
     <div className={styles.panel}>

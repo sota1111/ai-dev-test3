@@ -7,6 +7,7 @@ export interface Transition {
 export interface ParentState {
   name: string
   children: string[]
+  initialChild?: string
 }
 
 export interface StateMachine {
