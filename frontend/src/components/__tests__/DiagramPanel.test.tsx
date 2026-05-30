@@ -31,7 +31,7 @@ describe('buildMermaid', () => {
     const result = buildMermaid(trafficLight, '赤')
     expect(result).toContain('s0 --> s1 : 点灯')
     expect(result).toContain('s1 --> s2 : 点灯')
-    expect(result).toContain('s2 --> s0 : 点灯')
+    expect(result).toContain('s2 --> s0 : ↩ 点灯')
   })
 
   it('highlights current state with ASCII ID', () => {
