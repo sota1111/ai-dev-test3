@@ -1,3 +1,10 @@
+export type DisplayMode =
+  | 'all'
+  | 'current-parent'
+  | 'main-process'
+  | 'exception'
+  | 'maintenance'
+
 export interface Transition {
   from: string
   trigger: string
@@ -9,6 +16,7 @@ export interface ParentState {
   children: string[]
   initialChild?: string
   isInterrupt?: boolean
+  stateCategory?: 'normal' | 'pause' | 'exception' | 'maintenance'
 }
 
 export interface StateMachine {

@@ -6,7 +6,7 @@ import { HistoryPanel } from "./components/HistoryPanel"
 import { ModifyPanel } from "./components/ModifyPanel"
 import { DiffPanel } from "./components/DiffPanel"
 import { parseStateMachine, modifyStateMachine } from "./api/client"
-import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry } from "./types/stateMachine"
+import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry, DisplayMode } from "./types/stateMachine"
 import styles from "./App.module.css"
 
 function getParentOf(stateName: string, parentStates: ParentState[]): string | null {
@@ -18,15 +18,16 @@ function isParentName(name: string, parentStates: ParentState[]): boolean {
 }
 
 export default function App() {
-  const [stateMachine, setStateMachine] = useState<StateMachine | null>(null)
+  const [stateMachine, setStateMachine] = useState(null as any)
   const [currentState, setCurrentState] = useState("")
-  const [currentParentState, setCurrentParentState] = useState<string | null>(null)
-  const [history, setHistory] = useState<HistoryEntry[]>([])
-  const [returnStack, setReturnStack] = useState<{ state: string; parentState: string | null }[]>([])
+  const [currentParentState, setCurrentParentState] = useState(null as any)
+  const [history, setHistory] = useState([] as any[])
+  const [returnStack, setReturnStack] = useState([] as any[])
   const [loading, setLoading] = useState(false)
   const [modifyLoading, setModifyLoading] = useState(false)
-  const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
-  const [modifyHistory, setModifyHistory] = useState<ModifyHistoryEntry[]>([])
+  const [latestDiff, setLatestDiff] = useState(null as any)
+  const [modifyHistory, setModifyHistory] = useState([] as any[])
+  const [displayMode, setDisplayMode] = useState('all' as any)
 
   function initSimulation(sm: StateMachine) {
     const parents = sm.parentStates ?? []
@@ -51,6 +52,7 @@ export default function App() {
       initSimulation(sm)
       setLatestDiff(null)
       setModifyHistory([])
+      setDisplayMode('all')
     } catch {
     } finally {
       setLoading(false)
@@ -128,7 +130,13 @@ export default function App() {
       <h1>Simulator</h1>
       <main className={styles.main}>
         <InputPanel onGenerate={handleGenerate} loading={loading} />
-        <DiagramPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} />
+        <DiagramPanel
+          stateMachine={stateMachine}
+          currentState={currentState}
+          currentParentState={currentParentState}
+          displayMode={displayMode}
+          onDisplayModeChange={setDisplayMode}
+        />
         <ControlPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} onTrigger={handleTrigger} />
       </main>
       {stateMachine && (

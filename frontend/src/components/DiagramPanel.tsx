@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import mermaid from 'mermaid'
-import type { StateMachine, Transition } from '../types/stateMachine'
+import type { StateMachine, Transition, DisplayMode } from '../types/stateMachine'
 import styles from './DiagramPanel.module.css'
 
 mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' })
@@ -9,6 +9,8 @@ interface Props {
   stateMachine: StateMachine | null
   currentState: string
   currentParentState: string | null
+  displayMode: DisplayMode
+  onDisplayModeChange: (mode: DisplayMode) => void
 }
 
 type TransitionKind = 'normal' | 'back' | 'cross-parent' | 'interrupt' | 'return'
@@ -51,15 +53,129 @@ const kindPrefix: Record<TransitionKind, string> = {
   return: '↺ ',
 }
 
+export function filterStateMachine(
+  sm: StateMachine,
+  mode: DisplayMode,
+  currentState: string,
+  currentParent: string | null
+): StateMachine {
+  if (mode === 'all') return sm
+
+  const parentStates = sm.parentStates ?? []
+
+  if (mode === 'current-parent') {
+    if (!currentParent) {
+      const relevant = new Set([currentState])
+      sm.transitions
+        .filter(t => t.from === currentState || t.to === currentState)
+        .forEach(t => {
+          relevant.add(t.from)
+          if (t.to !== '$PREVIOUS') relevant.add(t.to)
+        })
+      return {
+        ...sm,
+        states: sm.states.filter(s => relevant.has(s)),
+        parentStates: [],
+        transitions: sm.transitions.filter(
+          t => relevant.has(t.from) && (relevant.has(t.to) || t.to === '$PREVIOUS')
+        ),
+      }
+    }
+    const parentDef = parentStates.find(p => p.name === currentParent)
+    if (!parentDef) return sm
+
+    const parentChildSet = new Set(parentDef.children)
+    const relatedTransitions = sm.transitions.filter(t => {
+      const fromInParent = parentChildSet.has(t.from) || t.from === currentParent
+      const toInParent = parentChildSet.has(t.to) || t.to === currentParent || t.to === '$PREVIOUS'
+      return fromInParent || toInParent
+    })
+    const relevantStates = new Set()
+    relatedTransitions.forEach(t => {
+      if (!parentChildSet.has(t.from) && t.from !== currentParent) relevantStates.add(t.from)
+      if (t.to !== '$PREVIOUS' && !parentChildSet.has(t.to) && t.to !== currentParent) relevantStates.add(t.to)
+    })
+    parentDef.children.forEach(c => relevantStates.add(c))
+
+    const initChild = parentDef.initialChild ?? parentDef.children[0] ?? sm.initialState
+    return {
+      ...sm,
+      states: sm.states.filter(s => relevantStates.has(s) || parentChildSet.has(s)),
+      parentStates: [parentDef],
+      transitions: relatedTransitions,
+      initialState: parentChildSet.has(sm.initialState) ? sm.initialState : initChild,
+    }
+  }
+
+  if (mode === 'main-process') {
+    const interruptParentNames = new Set(parentStates.filter(p => p.isInterrupt).map(p => p.name))
+    const interruptChildNames = new Set(parentStates.filter(p => p.isInterrupt).flatMap(p => p.children))
+
+    const filteredTransitions = sm.transitions.filter(t => {
+      if (interruptParentNames.has(t.from) || interruptParentNames.has(t.to)) return false
+      if (interruptChildNames.has(t.from) || interruptChildNames.has(t.to)) return false
+      if (t.to === '$PREVIOUS') return false
+      return true
+    })
+    return {
+      ...sm,
+      states: sm.states.filter(s => !interruptChildNames.has(s)),
+      parentStates: parentStates.filter(p => !p.isInterrupt),
+      transitions: filteredTransitions,
+    }
+  }
+
+  if (mode === 'exception' || mode === 'maintenance') {
+    let targetParents = parentStates.filter(p => p.isInterrupt)
+    const hasCategory = targetParents.some(p => p.stateCategory)
+
+    if (hasCategory) {
+      if (mode === 'maintenance') {
+        targetParents = targetParents.filter(p => p.stateCategory === 'maintenance')
+      } else {
+        targetParents = targetParents.filter(p => p.stateCategory !== 'maintenance')
+      }
+    }
+
+    const targetParentNames = new Set(targetParents.map(p => p.name))
+    const targetChildNames = new Set(targetParents.flatMap(p => p.children))
+
+    const relatedTransitions = sm.transitions.filter(t => {
+      const toTarget = targetParentNames.has(t.to) || targetChildNames.has(t.to)
+      const fromTarget = targetChildNames.has(t.from) || targetParentNames.has(t.from)
+      const isReturn = t.to === '$PREVIOUS' && targetChildNames.has(t.from)
+      return toTarget || fromTarget || isReturn
+    })
+
+    const relevantStates = new Set()
+    relatedTransitions.forEach(t => {
+      if (!targetParentNames.has(t.from)) relevantStates.add(t.from)
+      if (t.to !== '$PREVIOUS' && !targetParentNames.has(t.to)) relevantStates.add(t.to)
+    })
+    targetParents.forEach(p => p.children.forEach(c => relevantStates.add(c)))
+
+    const initState = relevantStates.has(sm.initialState) ? sm.initialState : (Array.from(relevantStates)[0] ?? sm.initialState)
+    return {
+      ...sm,
+      states: sm.states.filter(s => relevantStates.has(s)),
+      parentStates: targetParents,
+      transitions: relatedTransitions,
+      initialState: initState,
+    }
+  }
+
+  return sm
+}
+
 export function buildMermaid(sm: StateMachine, current: string, currentParent: string | null = null): string {
-  const stateIndexMap = new Map<string, number>()
+  const stateIndexMap = new Map()
   sm.states.forEach((state, index) => {
     stateIndexMap.set(state, index)
   })
 
-  const idMap = new Map<string, string>()
+  const idMap = new Map()
   sm.states.forEach((state, index) => {
-    idMap.set(state, "s" + index)
+    idMap.set(state, 's' + index)
   })
   const allStateNames = new Set([
     sm.initialState,
@@ -69,32 +185,29 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
   let nextId = sm.states.length
   for (const name of allStateNames) {
     if (!idMap.has(name)) {
-      idMap.set(name, "s" + nextId++)
+      idMap.set(name, 's' + nextId++)
       stateIndexMap.set(name, nextId)
     }
   }
 
   const parentStates = sm.parentStates ?? []
   const childStateNames = new Set(parentStates.flatMap(p => p.children))
-
-  const lines: string[] = ['stateDiagram-v2']
+  const lines = ['stateDiagram-v2']
 
   parentStates.forEach((parent, pi) => {
-    const parentId = "p" + pi
+    const parentId = 'p' + pi
     lines.push('  state "' + parent.name + '" as ' + parentId + ' {')
-
     const initialChild = parent.initialChild ?? parent.children[0]
     if (initialChild && idMap.has(initialChild)) {
-      lines.push("    [*] --> " + idMap.get(initialChild))
+      lines.push('    [*] --> ' + idMap.get(initialChild))
     }
-
     for (const child of parent.children) {
       const id = idMap.get(child)
       if (id) {
         lines.push('    state "' + child + '" as ' + id)
       }
     }
-    lines.push("  }")
+    lines.push('  }')
   })
 
   for (const [name, id] of idMap.entries()) {
@@ -110,11 +223,10 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
     const prefix = kindPrefix[kind]
     const rawLabel = t.trigger.replace(/"/g, "'")
     const label = prefix + rawLabel
-
     const fromId = idMap.get(t.from)
     const toId = t.to === '$PREVIOUS' ? '[*]' : idMap.get(t.to)
     if (fromId && toId) {
-      lines.push("  " + fromId + " --> " + toId + " : " + label)
+      lines.push('  ' + fromId + ' --> ' + toId + ' : ' + label)
     }
   }
 
@@ -122,7 +234,7 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
     const parentIndex = (sm.parentStates ?? []).findIndex(p => p.name === currentParent)
     if (parentIndex >= 0) {
       lines.push('  classDef currentParent fill:#ffe0b2,stroke:#e65100,stroke-width:3px')
-      lines.push("  class p" + parentIndex + " currentParent")
+      lines.push('  class p' + parentIndex + ' currentParent')
     }
   }
 
@@ -172,31 +284,59 @@ function DiagramLegend() {
   )
 }
 
+const MODE_LABELS: any = {
+  'all': '全体',
+  'current-parent': '現在の親状態',
+  'main-process': '主工程',
+  'exception': '例外・割り込み',
+  'maintenance': '保守',
+}
+
+const ALL_MODES: DisplayMode[] = ['all', 'current-parent', 'main-process', 'exception', 'maintenance']
+
 let diagramId = 0
 
-export function DiagramPanel({ stateMachine, currentState, currentParentState }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null)
+export function DiagramPanel({ stateMachine, currentState, currentParentState, displayMode, onDisplayModeChange }: Props) {
+  const containerRef = useRef(null)
+
+  const filteredSm = stateMachine
+    ? filterStateMachine(stateMachine, displayMode, currentState, currentParentState)
+    : null
 
   useEffect(() => {
-    if (!stateMachine || !containerRef.current) return
+    if (!filteredSm || !containerRef.current) return
     const id = 'mermaid-diagram-' + (++diagramId)
-    const definition = buildMermaid(stateMachine, currentState, currentParentState)
+    const definition = buildMermaid(filteredSm, currentState, currentParentState)
     mermaid.render(id, definition).then(({ svg }) => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = svg
-      }
+      const el = containerRef.current as any
+      if (el) el.innerHTML = svg
     }).catch(() => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '<p style="color:red">図の描画に失敗しました</p>'
-      }
+      const el = containerRef.current as any
+      if (el) el.innerHTML = 'Error'
     })
-  }, [stateMachine, currentState, currentParentState])
+  }, [filteredSm, currentState, currentParentState])
 
   return (
     <div className={styles.panel}>
       <h2 className={styles.title}>状態遷移図</h2>
       {stateMachine ? (
         <>
+          <div className={styles.modeBar}>
+            {ALL_MODES.map(mode => (
+              <button
+                key={mode}
+                className={styles.modeBtn + (displayMode === mode ? ' ' + styles.modeBtnActive : '')}
+                onClick={() => onDisplayModeChange(mode)}
+              >
+                {MODE_LABELS[mode]}
+              </button>
+            ))}
+          </div>
+          {displayMode !== 'all' && (
+            <div className={styles.partialIndicator}>
+              ⚠ 一部の状態・遷移のみ表示しています。全体を確認する場合は「全体」を選択してください。
+            </div>
+          )}
           <div ref={containerRef} className={styles.diagram} data-testid="diagram-container" />
           <DiagramLegend />
         </>
