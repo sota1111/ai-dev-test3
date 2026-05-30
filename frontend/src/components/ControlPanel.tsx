@@ -20,6 +20,10 @@ export function ControlPanel({ stateMachine, currentState, onTrigger }: Props) {
     t => t.from === currentState
   )
 
+  const parentStates = stateMachine.parentStates ?? []
+  const childStateNames = new Set(parentStates.flatMap(p => p.children))
+  const flatStates = stateMachine.states.filter(s => !childStateNames.has(s))
+
   return (
     <div className={styles.panel}>
       <section className={styles.section}>
@@ -30,7 +34,22 @@ export function ControlPanel({ stateMachine, currentState, onTrigger }: Props) {
       <section className={styles.section}>
         <h2 className={styles.title}>状態一覧</h2>
         <ul className={styles.list}>
-          {stateMachine.states.map(s => (
+          {parentStates.map(parent => (
+            <li key={parent.name} className={styles.stateItem}>
+              <span className={styles.parentLabel}>{parent.name}</span>
+              <ul className={styles.list}>
+                {parent.children.map(child => (
+                  <li
+                    key={child}
+                    className={`${styles.stateItem} ${styles.childItem} ${child === currentState ? styles.active : ""}`}
+                  >
+                    {child}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+          {flatStates.map(s => (
             <li
               key={s}
               className={`${styles.stateItem} ${s === currentState ? styles.active : ""}`}

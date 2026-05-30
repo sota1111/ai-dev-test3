@@ -49,4 +49,40 @@ describe('buildMermaid', () => {
     const result = buildMermaid(trafficLight, '赤')
     expect(result.startsWith('stateDiagram-v2')).toBe(true)
   })
+
+  it('renders parent state as subgraph', () => {
+    const hierarchical: StateMachine = {
+      initialState: '受付中',
+      states: ['受付中', '担当者確認中', '回答済み'],
+      parentStates: [
+        { name: '問い合わせ対応', children: ['受付中', '担当者確認中'] }
+      ],
+      transitions: [
+        { from: '受付中', trigger: '割り当て', to: '担当者確認中' },
+        { from: '担当者確認中', trigger: '回答', to: '回答済み' },
+      ],
+    }
+    const result = buildMermaid(hierarchical, '受付中')
+    expect(result).toContain('state "問い合わせ対応" as p0 {')
+    expect(result).toContain('state "受付中" as s0')
+    expect(result).toContain('state "担当者確認中" as s1')
+    expect(result).toContain('}')
+  })
+
+  it('flat states not in any parent are defined outside subgraph', () => {
+    const hierarchical: StateMachine = {
+      initialState: '受付中',
+      states: ['受付中', '担当者確認中', '回答済み'],
+      parentStates: [
+        { name: '問い合わせ対応', children: ['受付中', '担当者確認中'] }
+      ],
+      transitions: [
+        { from: '受付中', trigger: '割り当て', to: '担当者確認中' },
+        { from: '担当者確認中', trigger: '回答', to: '回答済み' },
+      ],
+    }
+    const result = buildMermaid(hierarchical, '受付中')
+    // 回答済み is not in any parent, so it should be defined at top level
+    expect(result).toContain('state "回答済み" as s2')
+  })
 })
