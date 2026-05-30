@@ -22,6 +22,7 @@ export default function App() {
   const [currentState, setCurrentState] = useState("")
   const [currentParentState, setCurrentParentState] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [returnStack, setReturnStack] = useState<{ state: string; parentState: string | null }[]>([])
   const [loading, setLoading] = useState(false)
   const [modifyLoading, setModifyLoading] = useState(false)
   const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
@@ -39,6 +40,7 @@ export default function App() {
       setCurrentParentState(getParentOf(sm.initialState, parents))
     }
     setHistory([])
+    setReturnStack([])
   }
 
   async function handleGenerate(text: string) {
@@ -81,9 +83,19 @@ export default function App() {
     const parents = stateMachine?.parentStates ?? []
     let nextState: string
     let nextParent: string | null
+    let newReturnStack = returnStack
 
-    if (isParentName(to, parents)) {
+    if (to === '$PREVIOUS') {
+      const prev = returnStack[returnStack.length - 1]
+      if (!prev) return
+      newReturnStack = returnStack.slice(0, -1)
+      nextState = prev.state
+      nextParent = prev.parentState
+    } else if (isParentName(to, parents)) {
       const parentDef = parents.find(p => p.name === to)!
+      if (parentDef.isInterrupt) {
+        newReturnStack = [...returnStack, { state: currentState, parentState: currentParentState }]
+      }
       nextState = parentDef.initialChild ?? parentDef.children[0] ?? to
       nextParent = to
     } else {
@@ -100,6 +112,7 @@ export default function App() {
       toParent: nextParent,
     }
     setHistory(prev => prev.concat(entry))
+    setReturnStack(newReturnStack)
     setCurrentState(nextState)
     setCurrentParentState(nextParent)
   }

@@ -8,6 +8,7 @@ export interface ParentState {
   name: string
   children: string[]
   initialChild?: string
+  isInterrupt?: boolean
 }
 
 export interface StateMachine {
