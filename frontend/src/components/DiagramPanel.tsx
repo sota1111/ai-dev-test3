@@ -17,7 +17,6 @@ export function buildMermaid(sm: StateMachine, current: string): string {
     idMap.set(state, `s${index}`)
   })
   // Also ensure initialState and transition states are covered
-  // (in case states array differs from actual usage)
   const allStateNames = new Set([
     sm.initialState,
     ...sm.transitions.flatMap(t => [t.from, t.to]),
@@ -30,23 +29,48 @@ export function buildMermaid(sm: StateMachine, current: string): string {
     }
   }
 
+  const parentStates = sm.parentStates ?? []
+
+  // Build a set of states that belong to a parent
+  const childStateNames = new Set(parentStates.flatMap(p => p.children))
+
   const lines: string[] = ['stateDiagram-v2']
-  // Define all states with display names
+
+  // Define parent states as subgraphs
+  parentStates.forEach((parent, pi) => {
+    const parentId = `p${pi}`
+    lines.push(`  state "${parent.name}" as ${parentId} {`)
+    for (const child of parent.children) {
+      const id = idMap.get(child)
+      if (id) {
+        lines.push(`    state "${child}" as ${id}`)
+      }
+    }
+    lines.push(`  }`)
+  })
+
+  // Define states not belonging to any parent
   for (const [name, id] of idMap.entries()) {
-    lines.push(`  state "${name}" as ${id}`)
+    if (!childStateNames.has(name)) {
+      lines.push(`  state "${name}" as ${id}`)
+    }
   }
+
   // Initial state
   lines.push('  [*] --> ' + idMap.get(sm.initialState))
+
   // Transitions
   for (const t of sm.transitions) {
     const label = t.trigger.replace(/"/g, "'")
     lines.push(`  ${idMap.get(t.from)} --> ${idMap.get(t.to)} : ${label}`)
   }
+
   // Current state highlight
   if (current && idMap.has(current)) {
     lines.push('  classDef current fill:#ff9,stroke:#f90,stroke-width:3px,color:#000')
     lines.push('  class ' + idMap.get(current) + ' current')
   }
+
   return lines.join('\n')
 }
 

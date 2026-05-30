@@ -64,4 +64,30 @@ describe('ControlPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: /点灯/ }))
     expect(onTrigger).toHaveBeenCalledWith(mockStateMachine.transitions[0])
   })
+
+  it('shows parent state label and child states in hierarchy', () => {
+    const hierarchicalSM: StateMachine = {
+      initialState: '受付中',
+      states: ['受付中', '担当者確認中', '回答済み'],
+      parentStates: [
+        { name: '問い合わせ対応', children: ['受付中', '担当者確認中'] }
+      ],
+      transitions: [
+        { from: '受付中', trigger: '割り当て', to: '担当者確認中' },
+        { from: '担当者確認中', trigger: '回答', to: '回答済み' },
+      ],
+    }
+    render(
+      <ControlPanel
+        stateMachine={hierarchicalSM}
+        currentState="受付中"
+        onTrigger={() => {}}
+      />
+    )
+    expect(screen.getByText('問い合わせ対応')).toBeInTheDocument()
+    // '受付中' appears in Current State, State List, and Transition List.
+    // '担当者確認中' appears in State List and Transition List.
+    expect(screen.getAllByText('受付中').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('担当者確認中').length).toBeGreaterThan(0)
+  })
 })

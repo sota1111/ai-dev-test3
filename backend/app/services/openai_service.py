@@ -12,10 +12,17 @@ SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
 {
   "initialState": "初期状態名",
   "states": ["状態1", "状態2"],
+  "parentStates": [
+    { "name": "親状態名", "children": ["状態1", "状態2"] }
+  ],
   "transitions": [
     { "from": "遷移元", "trigger": "トリガー名", "to": "遷移先" }
   ]
-}"""
+}
+
+parentStates には、複数の状態をまとめる「グループ（親状態）」が存在する場合のみ値を入れてください。
+階層がない場合は空配列 [] を返してください。
+states には子状態を含む全状態をフラットに列挙してください。"""
 
 
 def get_client() -> AzureOpenAI:

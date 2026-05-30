@@ -18,9 +18,15 @@ class Transition(BaseModel):
         populate_by_name = True
 
 
+class ParentState(BaseModel):
+    name: str
+    children: list[str]
+
+
 class ParseResponse(BaseModel):
     initialState: str
     states: list[str]
+    parentStates: list[ParentState] = []
     transitions: list[dict]
 
 
@@ -33,6 +39,7 @@ async def parse(request: ParseRequest):
         return ParseResponse(
             initialState=result["initialState"],
             states=result["states"],
+            parentStates=result.get("parentStates", []),
             transitions=result["transitions"],
         )
     except KeyError as e:
