@@ -81,7 +81,7 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
 
   parentStates.forEach((parent, pi) => {
     const parentId = "p" + pi
-    lines.push("  state "" + parent.name + "" as " + parentId + " {")
+    lines.push('  state "' + parent.name + '" as ' + parentId + ' {')
 
     const initialChild = parent.initialChild ?? parent.children[0]
     if (initialChild && idMap.has(initialChild)) {
@@ -91,7 +91,7 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
     for (const child of parent.children) {
       const id = idMap.get(child)
       if (id) {
-        lines.push("    state "" + child + "" as " + id)
+        lines.push('    state "' + child + '" as ' + id)
       }
     }
     lines.push("  }")
@@ -99,7 +99,7 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
 
   for (const [name, id] of idMap.entries()) {
     if (!childStateNames.has(name)) {
-      lines.push("  state "" + name + "" as " + id)
+      lines.push('  state "' + name + '" as ' + id)
     }
   }
 
@@ -131,8 +131,7 @@ export function buildMermaid(sm: StateMachine, current: string, currentParent: s
     lines.push('  class ' + idMap.get(current) + ' current')
   }
 
-  return lines.join('
-')
+  return lines.join('\n')
 }
 
 function DiagramLegend() {
