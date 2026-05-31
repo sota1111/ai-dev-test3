@@ -1,35 +1,34 @@
-import { useState } from "react"
 import styles from "./InputPanel.module.css"
 
-const EXAMPLE = `ユーザーは未ログイン状態から開始する。
-ログインボタンを押すと認証中になる。
-認証成功ならログイン済みになる。
-認証失敗ならエラー表示になる。
-エラー表示で再試行すると認証中に戻る。
-ログアウトすると未ログインに戻る。` 
+const EXAMPLE = "ユーザーは未ログイン状態から開始する。\n" +
+"ログインボタンを押すと認証中になる。\n" +
+"認証成功ならログイン済みになる。\n" +
+"認証失敗ならエラー表示になる。\n" +
+"エラー表示で再試行すると認証中に戻る。\n" +
+"ログアウトすると未ログインに戻る。"
 
 interface Props {
+  value: string
+  onChange: (text: string) => void
   onGenerate: (text: string) => void
   loading: boolean
 }
 
-export function InputPanel({ onGenerate, loading }: Props) {
-  const [text, setText] = useState("")
-
+export function InputPanel({ value, onChange, onGenerate, loading }: Props) {
   return (
     <div className={styles.panel}>
       <h2 className={styles.title}>自然言語入力</h2>
       <textarea
         className={styles.textarea}
-        value={text}
-        onChange={e => setText(e.target.value)}
+        value={value}
+        onChange={e => onChange(e.target.value)}
         placeholder={EXAMPLE}
         rows={12}
       />
       <button
         className={styles.generateBtn}
-        onClick={() => onGenerate(text)}
-        disabled={loading || !text.trim()}
+        onClick={() => onGenerate(value)}
+        disabled={loading || !value.trim()}
       >
         {loading ? "生成中..." : "状態遷移を生成"}
       </button>

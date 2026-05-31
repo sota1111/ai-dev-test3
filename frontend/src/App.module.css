@@ -32,7 +32,7 @@
 
 .main {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 220px 1fr 2fr 1fr;
   gap: 16px;
   flex: 1;
   background: white;
@@ -57,4 +57,49 @@
   .main {
     grid-template-columns: 1fr;
   }
+}
+
+.inputCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.saveActions {
+  display: flex;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 8px 12px;
+  background: #4a6cf7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.saveBtn:hover {
+  background: #3a5ce0;
+}
+
+.overwriteBtn {
+  flex: 1;
+  padding: 8px 12px;
+  background: white;
+  color: #4a6cf7;
+  border: 1px solid #4a6cf7;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.overwriteBtn:hover {
+  background: #f0f4ff;
 }

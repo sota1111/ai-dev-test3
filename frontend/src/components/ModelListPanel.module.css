@@ -1,0 +1,166 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-right: 1px solid #e0e0e0;
+  padding: 12px;
+  min-width: 200px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.refreshBtn {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #666;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.refreshBtn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.empty {
+  color: #999;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #e8e8e8;
+  background: #fafafa;
+  transition: background 0.15s;
+}
+
+.item:hover {
+  background: #f0f4ff;
+  border-color: #c0cff0;
+}
+
+.item.active {
+  background: #e8f0fe;
+  border-color: #4a6cf7;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.date {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.loadBtn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid #4a6cf7;
+  background: white;
+  color: #4a6cf7;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.loadBtn:hover:not(:disabled) {
+  background: #4a6cf7;
+  color: white;
+}
+
+.loadBtn:disabled {
+  border-color: #aaa;
+  color: #aaa;
+  cursor: default;
+}
+
+.itemActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dupBtn {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #888;
+  background: white;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dupBtn:hover {
+  background: #f0f0f0;
+}
+
+.delBtn {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #e53e3e;
+  background: white;
+  color: #e53e3e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.delBtn:hover {
+  background: #fff0f0;
+}

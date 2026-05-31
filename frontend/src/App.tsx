@@ -1,12 +1,15 @@
-import { useState } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { InputPanel } from "./components/InputPanel"
 import { DiagramPanel } from "./components/DiagramPanel"
 import { ControlPanel } from "./components/ControlPanel"
 import { HistoryPanel } from "./components/HistoryPanel"
 import { ModifyPanel } from "./components/ModifyPanel"
 import { DiffPanel } from "./components/DiffPanel"
-import { parseStateMachine, modifyStateMachine } from "./api/client"
-import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry, DisplayMode } from "./types/stateMachine"
+import { ModelListPanel } from "./components/ModelListPanel"
+import { SaveDialog } from "./components/SaveDialog"
+import { DeleteConfirmDialog } from "./components/DeleteConfirmDialog"
+import { parseStateMachine, modifyStateMachine, fetchModels, getModel, saveModel, updateModel, duplicateModel, deleteModel } from "./api/client"
+import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry, DisplayMode, ModelSummary } from "./types/stateMachine"
 import styles from "./App.module.css"
 
 function getParentOf(stateName: string, parentStates: ParentState[]): string | null {
@@ -27,7 +30,26 @@ export default function App() {
   const [modifyLoading, setModifyLoading] = useState(false)
   const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
   const [modifyHistory, setModifyHistory] = useState<ModifyHistoryEntry[]>([])
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('all')
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("all")
+  const [description, setDescription] = useState("")
+  const [currentModelId, setCurrentModelId] = useState<string | null>(null)
+  const [currentModelName, setCurrentModelName] = useState<string>("")
+  const [savedModels, setSavedModels] = useState<ModelSummary[]>([])
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const loadModelList = useCallback(async () => {
+    try {
+      const models = await fetchModels()
+      setSavedModels(models)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    loadModelList()
+  }, [loadModelList])
 
   function initSimulation(sm: StateMachine) {
     const parents = sm.parentStates ?? []
@@ -52,7 +74,9 @@ export default function App() {
       initSimulation(sm)
       setLatestDiff(null)
       setModifyHistory([])
-      setDisplayMode('all')
+      setDisplayMode("all")
+      setCurrentModelId(null)
+      setCurrentModelName("")
     } catch {
     } finally {
       setLoading(false)
@@ -87,7 +111,7 @@ export default function App() {
     let nextParent: string | null
     let newReturnStack = returnStack
 
-    if (to === '$PREVIOUS') {
+    if (to === "$PREVIOUS") {
       const prev = returnStack[returnStack.length - 1]
       if (!prev) return
       newReturnStack = returnStack.slice(0, -1)
@@ -125,11 +149,105 @@ export default function App() {
     }
   }
 
+  async function handleLoadModel(id: string) {
+    try {
+      const detail = await getModel(id)
+      setDescription(detail.description)
+      setStateMachine(detail.machine)
+      initSimulation(detail.machine)
+      setLatestDiff(null)
+      setModifyHistory([])
+      setDisplayMode("all")
+      setCurrentModelId(id)
+      setCurrentModelName(detail.name)
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleSaveNew(name: string) {
+    if (!stateMachine) return
+    try {
+      const detail = await saveModel(name, description, stateMachine)
+      setCurrentModelId(detail.id)
+      setCurrentModelName(detail.name)
+      setShowSaveDialog(false)
+      await loadModelList()
+    } catch {
+      setShowSaveDialog(false)
+    }
+  }
+
+  async function handleOverwrite() {
+    if (!stateMachine || !currentModelId) return
+    try {
+      await updateModel(currentModelId, currentModelName, description, stateMachine)
+      await loadModelList()
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleDuplicate(id: string) {
+    try {
+      await duplicateModel(id)
+      await loadModelList()
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleDeleteRequest(id: string, name: string) {
+    setDeleteTarget({ id, name })
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteTarget) return
+    try {
+      await deleteModel(deleteTarget.id)
+      if (currentModelId === deleteTarget.id) {
+        setCurrentModelId(null)
+        setCurrentModelName("")
+      }
+      setDeleteTarget(null)
+      await loadModelList()
+    } catch {
+      setDeleteTarget(null)
+    }
+  }
+
   return (
     <div className={styles.app}>
       <h1>Simulator</h1>
       <main className={styles.main}>
-        <InputPanel onGenerate={handleGenerate} loading={loading} />
+        <ModelListPanel
+          models={savedModels}
+          currentModelId={currentModelId}
+          onLoad={handleLoadModel}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDeleteRequest}
+          onRefresh={loadModelList}
+        />
+        <div className={styles.inputCol}>
+          <InputPanel
+            value={description}
+            onChange={setDescription}
+            onGenerate={handleGenerate}
+            loading={loading}
+          />
+          {stateMachine && (
+            <div className={styles.saveActions}>
+              <button className={styles.saveBtn} onClick={() => setShowSaveDialog(true)}>
+                保存
+              </button>
+              {currentModelId && (
+                <button className={styles.overwriteBtn} onClick={handleOverwrite}>
+                  上書き保存
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <DiagramPanel
           stateMachine={stateMachine}
           currentState={currentState}
@@ -137,7 +255,12 @@ export default function App() {
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
         />
-        <ControlPanel stateMachine={stateMachine} currentState={currentState} currentParentState={currentParentState} onTrigger={handleTrigger} />
+        <ControlPanel
+          stateMachine={stateMachine}
+          currentState={currentState}
+          currentParentState={currentParentState}
+          onTrigger={handleTrigger}
+        />
       </main>
       {stateMachine && (
         <div className={styles.footer}>
@@ -146,6 +269,17 @@ export default function App() {
         </div>
       )}
       <HistoryPanel history={history} onReset={handleReset} hasStateMachine={stateMachine !== null} />
+      <SaveDialog
+        open={showSaveDialog}
+        onSave={handleSaveNew}
+        onCancel={() => setShowSaveDialog(false)}
+      />
+      <DeleteConfirmDialog
+        open={deleteTarget !== null}
+        modelName={deleteTarget?.name ?? ""}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
