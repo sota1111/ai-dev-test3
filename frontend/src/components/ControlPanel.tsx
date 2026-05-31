@@ -1,3 +1,4 @@
+import { useState } from "react"
 import type { StateMachine, Transition, ParentState } from "../types/stateMachine"
 import styles from "./ControlPanel.module.css"
 
@@ -21,6 +22,9 @@ function resolveDestination(to: string, parentStates: ParentState[]): string {
 }
 
 export function ControlPanel({ stateMachine, currentState, currentParentState = null, onTrigger }: Props) {
+  const [showStateList, setShowStateList] = useState(false)
+  const [showTransitionList, setShowTransitionList] = useState(false)
+
   if (!stateMachine) {
     return (
       <div className={styles.panel}>
@@ -53,34 +57,45 @@ export function ControlPanel({ stateMachine, currentState, currentParentState = 
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.title}>状態一覧</h2>
-        <ul className={styles.list}>
-          {parentStates.map(parent => (
-            <li key={parent.name} className={styles.stateItem}>
-              <span className={`${styles.parentLabel} ${currentParentState === parent.name ? styles.active : ""}`}>
-                {parent.name}
-              </span>
-              <ul className={styles.list}>
-                {parent.children.map(child => (
-                  <li
-                    key={child}
-                    className={`${styles.stateItem} ${styles.childItem} ${child === currentState ? styles.active : ""}`}
-                  >
-                    {child}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-          {flatStates.map(s => (
-            <li
-              key={s}
-              className={`${styles.stateItem} ${s === currentState ? styles.active : ""}`}
-            >
-              {s}
-            </li>
-          ))}
-        </ul>
+        <div className={styles.toggleHeader}>
+          <h2 className={styles.title}>状態一覧</h2>
+          <button
+            className={styles.toggleBtn}
+            onClick={() => setShowStateList(v => !v)}
+            aria-expanded={showStateList}
+          >
+            {showStateList ? "▼" : "▶"}
+          </button>
+        </div>
+        {showStateList && (
+          <ul className={styles.list}>
+            {parentStates.map(parent => (
+              <li key={parent.name} className={styles.stateItem}>
+                <span className={`${styles.parentLabel} ${currentParentState === parent.name ? styles.active : ""}`}>
+                  {parent.name}
+                </span>
+                <ul className={styles.list}>
+                  {parent.children.map(child => (
+                    <li
+                      key={child}
+                      className={`${styles.stateItem} ${styles.childItem} ${child === currentState ? styles.active : ""}`}
+                    >
+                      {child}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+            {flatStates.map(s => (
+              <li
+                key={s}
+                className={`${styles.stateItem} ${s === currentState ? styles.active : ""}`}
+              >
+                {s}
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className={styles.section}>
@@ -116,16 +131,27 @@ export function ControlPanel({ stateMachine, currentState, currentParentState = 
       </section>
 
       <section className={styles.section}>
-        <h2 className={styles.title}>遷移一覧</h2>
-        <ul className={styles.transitionList}>
-          {stateMachine.transitions.map((t, i) => (
-            <li key={i} className={styles.transitionItem}>
-              <span className={styles.fromState}>{t.from}</span>
-              <span className={styles.triggerLabel}>{t.trigger}</span>
-              <span className={styles.toState}>{t.to}</span>
-            </li>
-          ))}
-        </ul>
+        <div className={styles.toggleHeader}>
+          <h2 className={styles.title}>遷移一覧</h2>
+          <button
+            className={styles.toggleBtn}
+            onClick={() => setShowTransitionList(v => !v)}
+            aria-expanded={showTransitionList}
+          >
+            {showTransitionList ? "▼" : "▶"}
+          </button>
+        </div>
+        {showTransitionList && (
+          <ul className={styles.transitionList}>
+            {stateMachine.transitions.map((t, i) => (
+              <li key={i} className={styles.transitionItem}>
+                <span className={styles.fromState}>{t.from}</span>
+                <span className={styles.triggerLabel}>{t.trigger}</span>
+                <span className={styles.toState}>{t.to}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   )
