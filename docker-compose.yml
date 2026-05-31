@@ -29,6 +29,8 @@ services:
     container_name: state-machine-frontend
     ports:
       - "3000:3000"
+    environment:
+      - BACKEND_HOST=backend
     depends_on:
       backend:
         condition: service_healthy
