@@ -1,12 +1,13 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { InputPanel } from "./components/InputPanel"
 import { DiagramPanel } from "./components/DiagramPanel"
 import { ControlPanel } from "./components/ControlPanel"
 import { HistoryPanel } from "./components/HistoryPanel"
 import { ModifyPanel } from "./components/ModifyPanel"
 import { DiffPanel } from "./components/DiffPanel"
-import { parseStateMachine, modifyStateMachine } from "./api/client"
-import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry, DisplayMode } from "./types/stateMachine"
+import { ModelListPanel } from "./components/ModelListPanel"
+import { parseStateMachine, modifyStateMachine, fetchModels, getModel } from "./api/client"
+import type { StateMachine, Transition, HistoryEntry, ParentState, StateMachineDiff, ModifyHistoryEntry, DisplayMode, ModelSummary } from "./types/stateMachine"
 import styles from "./App.module.css"
 
 function getParentOf(stateName: string, parentStates: ParentState[]): string | null {
@@ -28,6 +29,22 @@ export default function App() {
   const [latestDiff, setLatestDiff] = useState<StateMachineDiff | null>(null)
   const [modifyHistory, setModifyHistory] = useState<ModifyHistoryEntry[]>([])
   const [displayMode, setDisplayMode] = useState<DisplayMode>('all')
+  const [description, setDescription] = useState("")
+  const [currentModelId, setCurrentModelId] = useState<string | null>(null)
+  const [savedModels, setSavedModels] = useState<ModelSummary[]>([])
+
+  const loadModelList = useCallback(async () => {
+    try {
+      const models = await fetchModels()
+      setSavedModels(models)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useState(() => {
+    loadModelList()
+  })
 
   function initSimulation(sm: StateMachine) {
     const parents = sm.parentStates ?? []
@@ -53,6 +70,7 @@ export default function App() {
       setLatestDiff(null)
       setModifyHistory([])
       setDisplayMode('all')
+      setCurrentModelId(null)
     } catch {
     } finally {
       setLoading(false)
@@ -125,11 +143,37 @@ export default function App() {
     }
   }
 
+  async function handleLoadModel(id: string) {
+    try {
+      const detail = await getModel(id)
+      setDescription(detail.description)
+      setStateMachine(detail.machine)
+      initSimulation(detail.machine)
+      setLatestDiff(null)
+      setModifyHistory([])
+      setDisplayMode('all')
+      setCurrentModelId(id)
+    } catch {
+      // ignore
+    }
+  }
+
   return (
     <div className={styles.app}>
       <h1>Simulator</h1>
       <main className={styles.main}>
-        <InputPanel onGenerate={handleGenerate} loading={loading} />
+        <ModelListPanel
+          models={savedModels}
+          currentModelId={currentModelId}
+          onLoad={handleLoadModel}
+          onRefresh={loadModelList}
+        />
+        <InputPanel
+          value={description}
+          onChange={setDescription}
+          onGenerate={handleGenerate}
+          loading={loading}
+        />
         <DiagramPanel
           stateMachine={stateMachine}
           currentState={currentState}

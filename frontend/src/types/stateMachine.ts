@@ -51,3 +51,17 @@ export interface ModifyHistoryEntry {
   diff: StateMachineDiff
   timestamp: string
 }
+
+export interface ModelSummary {
+  id: string
+  name: string
+  state_count: number
+  transition_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ModelDetail extends ModelSummary {
+  description: string
+  machine: StateMachine
+}
