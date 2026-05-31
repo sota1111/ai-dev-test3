@@ -127,3 +127,40 @@
   color: #aaa;
   cursor: default;
 }
+
+.itemActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.dupBtn {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #888;
+  background: white;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dupBtn:hover {
+  background: #f0f0f0;
+}
+
+.delBtn {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #e53e3e;
+  background: white;
+  color: #e53e3e;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.delBtn:hover {
+  background: #fff0f0;
+}

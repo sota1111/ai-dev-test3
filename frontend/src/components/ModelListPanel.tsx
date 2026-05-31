@@ -5,6 +5,8 @@ interface Props {
   models: ModelSummary[]
   currentModelId: string | null
   onLoad: (id: string) => void
+  onDuplicate: (id: string) => void
+  onDelete: (id: string, name: string) => void
   onRefresh: () => void
 }
 
@@ -18,7 +20,7 @@ function formatDate(iso: string): string {
   })
 }
 
-export function ModelListPanel({ models, currentModelId, onLoad, onRefresh }: Props) {
+export function ModelListPanel({ models, currentModelId, onLoad, onDuplicate, onDelete, onRefresh }: Props) {
   return (
     <div className={styles.panel}>
       <div className={styles.header}>
@@ -43,13 +45,29 @@ export function ModelListPanel({ models, currentModelId, onLoad, onRefresh }: Pr
                 </span>
                 <span className={styles.date}>更新: {formatDate(m.updated_at)}</span>
               </div>
-              <button
-                className={styles.loadBtn}
-                onClick={() => onLoad(m.id)}
-                disabled={m.id === currentModelId}
-              >
-                {m.id === currentModelId ? "開中" : "開く"}
-              </button>
+              <div className={styles.itemActions}>
+                <button
+                  className={styles.loadBtn}
+                  onClick={() => onLoad(m.id)}
+                  disabled={m.id === currentModelId}
+                >
+                  {m.id === currentModelId ? "開中" : "開く"}
+                </button>
+                <button
+                  className={styles.dupBtn}
+                  onClick={() => onDuplicate(m.id)}
+                  title="複製"
+                >
+                  複製
+                </button>
+                <button
+                  className={styles.delBtn}
+                  onClick={() => onDelete(m.id, m.name)}
+                  title="削除"
+                >
+                  削除
+                </button>
+              </div>
             </li>
           ))}
         </ul>
