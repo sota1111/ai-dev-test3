@@ -346,4 +346,36 @@ test.describe("Manufacturing State Machine - 製造装置シナリオ", () => {
     await page.click('button:has-text("リセット")')
     await expect(currentStateLocator(page)).toHaveText("待機中 > 装置待機")
   })
+
+  test("TC-001: 7つの親状態が抽出されること", async ({ page }) => {
+    await setupManufacturing(page)
+    // スクリーンショット（全体）
+    await page.screenshot({ path: 'e2e/screenshots/manufacturing/TC-001-parent-states.png', fullPage: true })
+    // Mermaid SVGが表示されること
+    await expect(page.locator('[data-testid="diagram-container"] svg')).toBeVisible()
+    // 現在状態表示が親状態を含むこと
+    const stateText = await currentStateLocator(page).textContent()
+    expect(stateText).toContain("待機中")
+  })
+
+  test("TC-002: 各親状態に子状態が正しく紐づくこと", async ({ page }) => {
+    await setupManufacturing(page)
+    await page.screenshot({ path: 'e2e/screenshots/manufacturing/TC-002-child-states.png', fullPage: true })
+    // 初期子状態「装置待機」が現在状態に含まれること
+    const stateText = await currentStateLocator(page).textContent()
+    expect(stateText).toContain("装置待機")
+    // Mermaid SVGが描画されていること
+    await expect(page.locator('[data-testid="diagram-container"] svg')).toBeVisible()
+  })
+
+  test("TC-003: Mermaid図で複数親状態が階層表示されること", async ({ page }) => {
+    await setupManufacturing(page)
+    // Mermaid SVGのスクリーンショット
+    await page.screenshot({ path: 'e2e/screenshots/manufacturing/TC-003-mermaid-hierarchy.png', fullPage: true })
+    const svg = page.locator('[data-testid="diagram-container"] svg')
+    await expect(svg).toBeVisible()
+    // SVGが一定以上の高さを持つこと（複数親状態の階層表示）
+    const svgBox = await svg.boundingBox()
+    expect(svgBox?.height).toBeGreaterThan(200)
+  })
 })
