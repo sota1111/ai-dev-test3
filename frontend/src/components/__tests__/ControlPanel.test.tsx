@@ -44,7 +44,8 @@ describe('ControlPanel', () => {
         onTrigger={() => {}}
       />
     )
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    // Toggle buttons (▶) exist, but no trigger buttons for executing transitions
+    expect(screen.queryByRole('button', { name: /点灯/ })).not.toBeInTheDocument()
     expect(screen.getByText('実行可能なトリガーはありません（終端状態）')).toBeInTheDocument()
   })
 
@@ -61,7 +62,7 @@ describe('ControlPanel', () => {
     expect(onTrigger).toHaveBeenCalledWith(mockStateMachine.transitions[0])
   })
 
-  it('shows parent state label and child states in hierarchy', () => {
+  it('shows parent state label and child states in hierarchy after expanding state list', () => {
     const hierarchicalSM: StateMachine = {
       initialState: '受付中',
       states: ['受付中', '担当者確認中', '回答済み'],
@@ -80,6 +81,10 @@ describe('ControlPanel', () => {
         onTrigger={() => {}}
       />
     )
+    // State list is hidden by default - expand it first
+    const toggleBtns = screen.getAllByRole('button', { name: '▶' })
+    fireEvent.click(toggleBtns[0]) // first ▶ is the state list toggle
+
     expect(screen.getByText('問い合わせ対応')).toBeInTheDocument()
     expect(screen.getAllByText('受付中').length).toBeGreaterThan(0)
     expect(screen.getAllByText('担当者確認中').length).toBeGreaterThan(0)
@@ -174,5 +179,63 @@ describe('ControlPanel', () => {
     )
     expect(screen.getByText('現在状態専用トリガー')).toBeInTheDocument()
     expect(screen.getByText('親状態共通トリガー')).toBeInTheDocument()
+  })
+
+  it('state list is hidden by default and toggled on click', () => {
+    render(
+      <ControlPanel
+        stateMachine={mockStateMachine}
+        currentState="赤"
+        onTrigger={() => {}}
+      />
+    )
+    // State list content should not be visible by default
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
+
+    // Click the first ▶ toggle (state list)
+    const toggleBtns = screen.getAllByRole('button', { name: '▶' })
+    fireEvent.click(toggleBtns[0])
+
+    // Now state list should be visible
+    expect(screen.getByRole('list')).toBeInTheDocument()
+    expect(screen.getAllByText('赤').length).toBeGreaterThan(0)
+  })
+
+  it('transition list is hidden by default and toggled on click', () => {
+    render(
+      <ControlPanel
+        stateMachine={mockStateMachine}
+        currentState="赤"
+        onTrigger={() => {}}
+      />
+    )
+    // Expand state list to check only transition list separately
+    // Both ▶ buttons present initially
+    const initialToggleBtns = screen.getAllByRole('button', { name: '▶' })
+    expect(initialToggleBtns).toHaveLength(2)
+
+    // Click second toggle (transition list)
+    fireEvent.click(initialToggleBtns[1])
+
+    // Check ▼ is shown for transition list (it's now expanded)
+    const collapseBtns = screen.getAllByRole('button', { name: '▼' })
+    expect(collapseBtns).toHaveLength(1)
+  })
+
+  it('state list and transition list toggle independently', () => {
+    render(
+      <ControlPanel
+        stateMachine={mockStateMachine}
+        currentState="赤"
+        onTrigger={() => {}}
+      />
+    )
+    const toggleBtns = screen.getAllByRole('button', { name: '▶' })
+    // Expand state list only
+    fireEvent.click(toggleBtns[0])
+
+    // State list toggle shows ▼, transition list still shows ▶
+    expect(screen.getAllByRole('button', { name: '▼' })).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: '▶' })).toHaveLength(1)
   })
 })
