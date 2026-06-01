@@ -106,6 +106,7 @@ export default function App() {
       setStateMachine(updatedMachine)
       initSimulation(updatedMachine)
       setLatestDiff(diff)
+      setDisplayMode("all")
       const entry: ModifyHistoryEntry = {
         step: modifyHistory.length + 1,
         request,
