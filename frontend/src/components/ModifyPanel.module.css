@@ -45,3 +45,24 @@
 .modifyBtn:hover:not(:disabled) {
   background: #154e8a;
 }
+
+.sampleButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sampleBtn {
+  background: #e8f0fc;
+  color: #1a1a2e;
+  border: 1px solid #4a90d9;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sampleBtn:hover {
+  background: #c5d9f5;
+}
