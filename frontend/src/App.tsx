@@ -237,14 +237,6 @@ export default function App() {
       <h1>Simulator</h1>
       {error && <div className={styles.error}>{error}</div>}
       <main className={styles.main}>
-        <ModelListPanel
-          models={savedModels}
-          currentModelId={currentModelId}
-          onLoad={handleLoadModel}
-          onDuplicate={handleDuplicate}
-          onDelete={handleDeleteRequest}
-          onRefresh={loadModelList}
-        />
         <div className={styles.inputCol}>
           <InputPanel
             value={description}
@@ -279,6 +271,16 @@ export default function App() {
           onTrigger={handleTrigger}
         />
       </main>
+      <div className={styles.modelListArea}>
+        <ModelListPanel
+          models={savedModels}
+          currentModelId={currentModelId}
+          onLoad={handleLoadModel}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDeleteRequest}
+          onRefresh={loadModelList}
+        />
+      </div>
       {stateMachine && (
         <div className={styles.footer}>
           <ModifyPanel onModify={handleModify} loading={modifyLoading} />

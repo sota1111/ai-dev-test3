@@ -30,9 +30,17 @@
   font-size: 0.9rem;
 }
 
+.modelListArea {
+  background: white;
+  border-radius: 10px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow-x: auto;
+}
+
 .main {
   display: grid;
-  grid-template-columns: 220px 1fr 2fr 1fr;
+  grid-template-columns: 1fr 2fr 1fr;
   gap: 16px;
   flex: 1;
   background: white;
