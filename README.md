@@ -40,11 +40,13 @@ cp .env.example .env
 
 **.env 設定例:**
 ```env
-AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com/
-AZURE_OPENAI_API_KEY=<your-api-key>
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_OPENAI_API_VERSION=2024-10-21
+AI_PROVIDER=openai
+OPENAI_API_KEY=<your-openai-api-key>
+OPENAI_MODEL=gpt-4o-mini
 ```
+
+`OPENAI_API_KEY` が設定されている場合は OpenAI API を優先して使用します。
+Azure OpenAI を使う場合は `AZURE_OPENAI_*` を設定してください。
 
 ### 3. Docker Compose で起動
 
@@ -66,8 +68,11 @@ docker-compose down
 
 | 変数名 | 説明 | デフォルト / 備考 |
 |--------|------|-------------------|
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI エンドポイント URL | ✅ 必須 |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API キー | ✅ 必須 |
+| `AI_PROVIDER` | 利用する AI プロバイダ | `openai` または未設定時はキー有無で自動判定 |
+| `OPENAI_API_KEY` | OpenAI API キー | 設定時は OpenAI API を優先 |
+| `OPENAI_MODEL` | OpenAI API モデル名 | `gpt-4o-mini` |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI エンドポイント URL | Azure OpenAI 利用時に必須 |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API キー | Azure OpenAI 利用時に必須 |
 | `AZURE_OPENAI_DEPLOYMENT` | デプロイ名 | `gpt-4o-mini` |
 | `AZURE_OPENAI_API_VERSION` | API バージョン | `2024-10-21` |
 | `DATABASE_URL` | モデル保存用データベース接続文字列 | `sqlite:////data/models.db` |
