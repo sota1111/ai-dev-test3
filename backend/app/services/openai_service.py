@@ -1,6 +1,6 @@
 import json
 import os
-from openai import AzureOpenAI
+from openai import AzureOpenAI, NotFoundError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -255,15 +255,21 @@ def modify_state_machine(current: dict, request: str) -> dict:
     current_json = json.dumps(current, ensure_ascii=False, indent=2)
     user_message = f"現在の状態遷移定義:\n{current_json}\n\n変更依頼:\n{request}"
 
-    response = client.chat.completions.create(
-        model=deployment,
-        messages=[
-            {"role": "system", "content": MODIFY_SYSTEM_PROMPT},
-            {"role": "user", "content": user_message},
-        ],
-        temperature=0,
-        response_format={"type": "json_object"},
-    )
+    try:
+        response = client.chat.completions.create(
+            model=deployment,
+            messages=[
+                {"role": "system", "content": MODIFY_SYSTEM_PROMPT},
+                {"role": "user", "content": user_message},
+            ],
+            temperature=0,
+            response_format={"type": "json_object"},
+        )
+    except NotFoundError:
+        raise RuntimeError(
+            f"Azure OpenAI デプロイメント '{deployment}' が見つかりません。"
+            "環境変数 AZURE_OPENAI_DEPLOYMENT を確認してください。"
+        )
 
     content = response.choices[0].message.content
     return json.loads(content)
