@@ -284,6 +284,29 @@ function DiagramLegend() {
   )
 }
 
+function StateOwnerList({ stateMachine }: { stateMachine: StateMachine }) {
+  const owners = stateMachine.stateOwners ?? {}
+  const rows = stateMachine.states
+    .map(state => ({ state, owner: owners[state] }))
+    .filter(row => row.owner)
+
+  if (rows.length === 0) return null
+
+  return (
+    <div className={styles.ownerList}>
+      <h3 className={styles.ownerTitle}>状態ごとの担当</h3>
+      <div className={styles.ownerRows}>
+        {rows.map(row => (
+          <div key={row.state} className={styles.ownerRow}>
+            <span className={styles.ownerState}>{row.state}</span>
+            <span className={styles.ownerBadge}>{row.owner}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const MODE_LABELS: any = {
   'all': '全体',
   'current-parent': '現在の親状態',
@@ -338,6 +361,7 @@ export function DiagramPanel({ stateMachine, currentState, currentParentState, d
             </div>
           )}
           <div ref={containerRef} className={styles.diagram} data-testid="diagram-container" />
+          <StateOwnerList stateMachine={filteredSm ?? stateMachine} />
           <DiagramLegend />
         </>
       ) : (

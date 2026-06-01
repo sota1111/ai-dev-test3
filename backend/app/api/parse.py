@@ -21,11 +21,15 @@ class Transition(BaseModel):
 class ParentState(BaseModel):
     name: str
     children: list[str]
+    initialChild: str | None = None
+    isInterrupt: bool = False
+    stateCategory: str | None = None
 
 
 class ParseResponse(BaseModel):
     initialState: str
     states: list[str]
+    stateOwners: dict[str, str] = {}
     parentStates: list[ParentState] = []
     transitions: list[dict]
 
@@ -39,6 +43,7 @@ async def parse(request: ParseRequest):
         return ParseResponse(
             initialState=result["initialState"],
             states=result["states"],
+            stateOwners=result.get("stateOwners", {}),
             parentStates=result.get("parentStates", []),
             transitions=result["transitions"],
         )

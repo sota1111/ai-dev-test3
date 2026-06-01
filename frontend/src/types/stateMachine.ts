@@ -22,6 +22,7 @@ export interface ParentState {
 export interface StateMachine {
   initialState: string
   states: string[]
+  stateOwners?: Record<string, string>
   parentStates?: ParentState[]
   transitions: Transition[]
 }
