@@ -9,11 +9,14 @@ class ParentStateModel(BaseModel):
     name: str
     children: list[str]
     initialChild: str | None = None
+    isInterrupt: bool = False
+    stateCategory: str | None = None
 
 
 class StateMachineModel(BaseModel):
     initialState: str
     states: list[str]
+    stateOwners: dict[str, str] = {}
     parentStates: list[ParentStateModel] = []
     transitions: list[dict]
 
@@ -66,6 +69,7 @@ async def modify(request: ModifyRequest):
             updatedMachine=StateMachineModel(
                 initialState=updated["initialState"],
                 states=updated["states"],
+                stateOwners=updated.get("stateOwners", {}),
                 parentStates=updated.get("parentStates", []),
                 transitions=updated["transitions"],
             ),

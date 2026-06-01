@@ -121,3 +121,56 @@
   padding: 4px 10px;
   margin-bottom: 4px;
 }
+
+.ownerList {
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #f7fbff;
+  border: 1px solid #cfe2f3;
+  border-radius: 6px;
+}
+
+.ownerTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #24435f;
+  margin: 0 0 8px;
+}
+
+.ownerRows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 6px;
+}
+
+.ownerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 8px;
+  background: #fff;
+  border: 1px solid #e1edf7;
+  border-radius: 4px;
+}
+
+.ownerState {
+  min-width: 0;
+  overflow: hidden;
+  color: #223;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ownerBadge {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  color: #17405f;
+  background: #e7f2fb;
+  border: 1px solid #bdd8ec;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react"
+import axios from "axios"
 import { InputPanel } from "./components/InputPanel"
 import { DiagramPanel } from "./components/DiagramPanel"
 import { ControlPanel } from "./components/ControlPanel"
@@ -37,6 +38,17 @@ export default function App() {
   const [savedModels, setSavedModels] = useState<ModelSummary[]>([])
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+  const [error, setError] = useState("")
+
+  function getErrorMessage(error: unknown): string {
+    if (axios.isAxiosError(error)) {
+      const detail = error.response?.data?.detail
+      if (typeof detail === "string") return detail
+      if (detail) return JSON.stringify(detail)
+      return error.message
+    }
+    return error instanceof Error ? error.message : "処理に失敗しました"
+  }
 
   const loadModelList = useCallback(async () => {
     try {
@@ -68,6 +80,7 @@ export default function App() {
 
   async function handleGenerate(text: string) {
     setLoading(true)
+    setError("")
     try {
       const sm = await parseStateMachine(text)
       setStateMachine(sm)
@@ -77,7 +90,8 @@ export default function App() {
       setDisplayMode("all")
       setCurrentModelId(null)
       setCurrentModelName("")
-    } catch {
+    } catch (err) {
+      setError(`状態遷移の生成に失敗しました: ${getErrorMessage(err)}`)
     } finally {
       setLoading(false)
     }
@@ -86,6 +100,7 @@ export default function App() {
   async function handleModify(request: string) {
     if (!stateMachine) return
     setModifyLoading(true)
+    setError("")
     try {
       const { updatedMachine, diff } = await modifyStateMachine(stateMachine, request)
       setStateMachine(updatedMachine)
@@ -98,7 +113,8 @@ export default function App() {
         timestamp: new Date().toLocaleTimeString("ja-JP"),
       }
       setModifyHistory(prev => prev.concat(entry))
-    } catch {
+    } catch (err) {
+      setError(`状態遷移の変更に失敗しました: ${getErrorMessage(err)}`)
     } finally {
       setModifyLoading(false)
     }
@@ -219,6 +235,7 @@ export default function App() {
   return (
     <div className={styles.app}>
       <h1>Simulator</h1>
+      {error && <div className={styles.error}>{error}</div>}
       <main className={styles.main}>
         <ModelListPanel
           models={savedModels}
