@@ -239,6 +239,11 @@ def parse_state_machine(text: str) -> dict:
             temperature=0,
             response_format={"type": "json_object"},
         )
+    except NotFoundError:
+        raise RuntimeError(
+            f"Azure OpenAI デプロイメント '{deployment}' が見つかりません。"
+            "環境変数 AZURE_OPENAI_DEPLOYMENT を確認してください。"
+        )
     except Exception:
         if is_robot_maintenance_request(text):
             return build_robot_maintenance_machine()
