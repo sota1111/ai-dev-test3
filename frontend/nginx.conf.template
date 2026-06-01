@@ -8,14 +8,16 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://${BACKEND_HOST}/api/;
-        proxy_set_header Host $host;
+        proxy_pass https://${BACKEND_HOST}/api/;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${BACKEND_HOST};
         proxy_set_header X-Real-IP $remote_addr;
     }
 
     location /health {
-        proxy_pass http://${BACKEND_HOST}/health;
-        proxy_set_header Host $host;
+        proxy_pass https://${BACKEND_HOST}/health;
+        proxy_ssl_server_name on;
+        proxy_set_header Host ${BACKEND_HOST};
     }
 
     location /nginx-health {
