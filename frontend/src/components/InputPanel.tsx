@@ -17,7 +17,7 @@ interface Props {
 export function InputPanel({ value, onChange, onGenerate, loading }: Props) {
   return (
     <div className={styles.panel}>
-      <h2 className={styles.title}>自然言語入力</h2>
+      <h2 className={styles.title}>初期条件入力</h2>
       <textarea
         className={styles.textarea}
         value={value}

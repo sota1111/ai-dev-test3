@@ -71,13 +71,17 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .saveActions {
   display: flex;
   gap: 8px;
   padding: 0 4px;
+}
+
+.modifyArea {
+  overflow-y: auto;
 }
 
 .saveBtn {
