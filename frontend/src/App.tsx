@@ -256,6 +256,11 @@ export default function App() {
               )}
             </div>
           )}
+          {stateMachine && (
+            <div className={styles.modifyArea}>
+              <ModifyPanel onModify={handleModify} loading={modifyLoading} />
+            </div>
+          )}
         </div>
         <DiagramPanel
           stateMachine={stateMachine}
@@ -282,12 +287,9 @@ export default function App() {
           onRefresh={loadModelList}
         />
       </div>
-      {stateMachine && (
-        <div className={styles.footer}>
-          <ModifyPanel onModify={handleModify} loading={modifyLoading} />
-          <DiffPanel latestDiff={latestDiff} history={modifyHistory} />
-        </div>
-      )}
+      <div className={styles.footer}>
+        <DiffPanel latestDiff={latestDiff} history={modifyHistory} />
+      </div>
       <HistoryPanel history={history} onReset={handleReset} hasStateMachine={stateMachine !== null} />
       <SaveDialog
         open={showSaveDialog}
