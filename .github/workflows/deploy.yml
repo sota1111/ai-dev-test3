@@ -1,4 +1,4 @@
-name: Deploy to Azure Container Apps (Runner Build)
+name: Deploy to Azure Container Apps
 
 on:
   workflow_dispatch:
@@ -81,6 +81,9 @@ jobs:
         run: |
           az identity create --resource-group "$RESOURCE_GROUP" --name "${BACKEND_APP}-identity"
           az identity create --resource-group "$RESOURCE_GROUP" --name "${FRONTEND_APP}-identity"
+
+      - name: Wait for Identities to propagate
+        run: sleep 60
 
       - name: Assign AcrPull role
         run: |
