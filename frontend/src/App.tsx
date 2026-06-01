@@ -269,13 +269,16 @@ export default function App() {
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
         />
-            <ControlPanel
-              stateMachine={stateMachine}
-              currentState={currentState}
-              currentParentState={currentParentState}
-              onTrigger={handleTrigger}
-              onReset={handleReset}
-            />
+        <div className={styles.rightCol}>
+          <ControlPanel
+            stateMachine={stateMachine}
+            currentState={currentState}
+            currentParentState={currentParentState}
+            onTrigger={handleTrigger}
+            onReset={handleReset}
+          />
+          <DiffPanel latestDiff={latestDiff} history={modifyHistory} />
+        </div>
       </main>
       <div className={styles.modelListArea}>
         <ModelListPanel
@@ -287,9 +290,7 @@ export default function App() {
           onRefresh={loadModelList}
         />
       </div>
-      <div className={styles.footer}>
-        <DiffPanel latestDiff={latestDiff} history={modifyHistory} />
-      </div>
+
       <HistoryPanel history={history} onReset={handleReset} hasStateMachine={stateMachine !== null} />
       <SaveDialog
         open={showSaveDialog}
