@@ -264,12 +264,13 @@ export default function App() {
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
         />
-        <ControlPanel
-          stateMachine={stateMachine}
-          currentState={currentState}
-          currentParentState={currentParentState}
-          onTrigger={handleTrigger}
-        />
+            <ControlPanel
+              stateMachine={stateMachine}
+              currentState={currentState}
+              currentParentState={currentParentState}
+              onTrigger={handleTrigger}
+              onReset={handleReset}
+            />
       </main>
       <div className={styles.modelListArea}>
         <ModelListPanel

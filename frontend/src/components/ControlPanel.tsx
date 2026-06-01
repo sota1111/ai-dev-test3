@@ -7,6 +7,7 @@ interface Props {
   currentState: string
   currentParentState?: string | null
   onTrigger: (transition: Transition) => void
+  onReset?: () => void
 }
 
 function resolveDestination(to: string, parentStates: ParentState[]): string {
@@ -21,7 +22,7 @@ function resolveDestination(to: string, parentStates: ParentState[]): string {
   return to
 }
 
-export function ControlPanel({ stateMachine, currentState, currentParentState = null, onTrigger }: Props) {
+export function ControlPanel({ stateMachine, currentState, currentParentState = null, onTrigger, onReset }: Props) {
   const [showStateList, setShowStateList] = useState(false)
   const [showTransitionList, setShowTransitionList] = useState(false)
 
@@ -112,9 +113,12 @@ export function ControlPanel({ stateMachine, currentState, currentParentState = 
                 onClick={() => onTrigger(t)}
               >
                 {t.trigger}
-                <span className={styles.arrow}> → {resolveDestination(t.to, parentStates)}</span>
+                <span className={styles.arrow}>
+                  → {resolveDestination(t.to, parentStates)}
+                </span>
               </button>
             ))}
+
             {showHeaders && <h3 className={styles.groupHeader}>親状態共通トリガー</h3>}
             {parentTransitions.map((t, i) => (
               <button
@@ -123,10 +127,20 @@ export function ControlPanel({ stateMachine, currentState, currentParentState = 
                 onClick={() => onTrigger(t)}
               >
                 {t.trigger}
-                <span className={styles.arrow}> → {resolveDestination(t.to, parentStates)}</span>
+                <span className={styles.arrow}>
+                  → {resolveDestination(t.to, parentStates)}
+                </span>
               </button>
             ))}
           </div>
+        )}
+        {onReset && (
+          <button
+            className={styles.resetTriggerBtn}
+            onClick={onReset}
+          >
+            初期状態へ戻る
+          </button>
         )}
       </section>
 
