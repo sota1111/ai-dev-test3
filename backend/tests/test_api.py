@@ -59,6 +59,15 @@ def test_parse_openai_exception(mock_parse, client):
     assert response.status_code == 500
 
 @patch("app.api.parse.parse_state_machine")
+def test_parse_not_found_error(mock_parse, client):
+    mock_parse.side_effect = RuntimeError(
+        "Azure OpenAI デプロイメント 'gpt-4o-mini' が見つかりません。環境変数 AZURE_OPENAI_DEPLOYMENT を確認してください。"
+    )
+    response = client.post("/api/parse", json={"text": "ロボットが動かない保守会社に連絡"})
+    assert response.status_code == 500
+    assert "デプロイメント" in response.json()["detail"]
+
+@patch("app.api.parse.parse_state_machine")
 def test_parse_key_error(mock_parse, client):
     mock_parse.side_effect = KeyError("initialState")
     response = client.post("/api/parse", json={"text": "test"})
