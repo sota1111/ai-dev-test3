@@ -4,11 +4,17 @@ Azure OpenAIを使って自然言語から状態遷移を生成し、GUIでシ�
 
 ## 機能
 
-- 自然言語（日本語/英語）で状態遷移の仕様を入力
-- Azure OpenAI (gpt-4o-mini) で状態・トリガー・遷移を自動抽出
-- Mermaid.js による状態遷移図の可視化（現在状態強調表示）
-- GUIトリガーボタンによる状態遷移シミュレーション
-- シミュレーション履歴の記録とリセット機能
+- **自然言語によるモデル生成**: 自然言語（日本語/英語）で状態遷移の仕様を入力し、Azure OpenAI (gpt-4o-mini) で状態・トリガー・遷移を自動抽出。
+- **階層状態（親状態/子状態）のサポート**: 親状態/子状態を持つ階層構造を生成・表示。
+- **Mermaid.js による可視化**: 状態遷移図を動的に描画。現在の子状態を黄色背景、親状態をオレンジ枠で強調表示。
+- **GUI シミュレーション**: トリガーボタンにより状態遷移を実行。親状態共通トリガーと子状態専用トリガーの両方を実行可能。
+- **割り込みと復帰**: 割り込み状態（isInterrupt）への遷移と、`$PREVIOUS` による元の状態への復帰をサポート。
+- **担当者表示**: 状態ごとの担当者（会社/部署/役割）をバッジ形式で表示。
+- **自然言語による既存モデルの変更**: 生成済みまたは読み込み済みのモデルに対して、自然言語で変更を依頼。
+- **変更差分と履歴**: モデル変更時の差分（追加/削除された状態・遷移）を視覚的に表示し、変更履歴を記録。
+- **モデルの永続化**: 状態遷移モデルを名前を付けて保存、読み込み、上書き、複製、削除が可能（SQLite を使用）。
+- **シミュレーション履歴**: 実行した遷移をステップごとに記録し、いつでもリセット可能。
+- **入力支援**: ロボット保守、半導体製造装置などのサンプル入力および変更依頼サンプルを完備。
 
 ## 必要なもの
 
@@ -26,14 +32,18 @@ cd ai-dev-test3
 
 ### 2. 環境変数を設定
 
+`.env.example` をコピーして `.env` を作成し、必要な情報を設定してください。
+
 ```bash
 cp .env.example .env
 ```
 
-`.env` を開き、`AZURE_OPENAI_API_KEY` に実際の API キーを設定してください。
-
-```
-AZURE_OPENAI_API_KEY=your_actual_api_key_here
+**.env 設定例:**
+```env
+AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com/
+AZURE_OPENAI_API_KEY=<your-api-key>
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+AZURE_OPENAI_API_VERSION=2024-10-21
 ```
 
 ### 3. Docker Compose で起動
@@ -42,7 +52,9 @@ AZURE_OPENAI_API_KEY=your_actual_api_key_here
 docker-compose up --build
 ```
 
-起動後、ブラウザで http://localhost:3000 を開いてください。
+起動後、以下の URL でアクセス可能です。
+- **フロントエンド**: [http://localhost:3000](http://localhost:3000)
+- **バックエンド ヘルスチェック**: [http://localhost:8001/health](http://localhost:8001/health) (Docker Compose 利用時)
 
 ### 4. 停止
 
@@ -52,152 +64,102 @@ docker-compose down
 
 ## 環境変数
 
-| 変数名 | 説明 | 必須 |
-|--------|------|------|
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI エンドポイント URL | ✅ |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API キー | ✅ |
-| `AZURE_OPENAI_DEPLOYMENT` | デプロイ名（例: `gpt-4o-mini`） | ✅ |
-| `AZURE_OPENAI_API_VERSION` | API バージョン（例: `2024-10-21`） | ✅ |
-| `AZURE_AI_PROJECT_ENDPOINT` | Microsoft Foundry プロジェクトエンドポイント | 将来拡張用 |
-| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Microsoft Foundry モデルデプロイ名 | 将来拡張用 |
-
-> **注意**: `.env` ファイルに API キーを入れたまま Git にコミットしないでください。`.gitignore` で除外されていますが、確認をお忘れなく。
-
-## Microsoft Foundry / Azure AI Agent Service について
-
-`AZURE_AI_PROJECT_ENDPOINT` と `AZURE_AI_MODEL_DEPLOYMENT_NAME` は、将来的に Azure AI Agent Service（Microsoft Foundry）を利用した高度なエージェント機能を追加する際に使用します。現在のバージョンでは使用していませんが、`.env.example` に記載してあります。
-
-詳細: [Azure AI Agent Service ドキュメント](https://learn.microsoft.com/azure/ai-services/agents/)
+| 変数名 | 説明 | デフォルト / 備考 |
+|--------|------|-------------------|
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI エンドポイント URL | ✅ 必須 |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API キー | ✅ 必須 |
+| `AZURE_OPENAI_DEPLOYMENT` | デプロイ名 | `gpt-4o-mini` |
+| `AZURE_OPENAI_API_VERSION` | API バージョン | `2024-10-21` |
+| `DATABASE_URL` | モデル保存用データベース接続文字列 | `sqlite:////data/models.db` |
+| `BACKEND_HOST` | nginx からのプロキシ先ホスト名 | `backend` (Docker Compose 用) |
+| `VITE_BACKEND_URL` | Vite 開発サーバーのプロキシ先 | `http://localhost:8000` |
+| `AZURE_AI_PROJECT_ENDPOINT` | Microsoft Foundry エンドポイント | 現行コードでは未使用 |
+| `AZURE_AI_MODEL_DEPLOYMENT_NAME` | Microsoft Foundry モデルデプロイ名 | 現行コードでは未使用 |
 
 ## API エンドポイント
 
 | メソッド | パス | 説明 |
 |---------|------|------|
-| `GET` | `/health` | ヘルスチェック |
-| `POST` | `/api/parse` | 自然言語 → 状態遷移 JSON 変換 |
+| `GET` | `/health` | バックエンド ヘルスチェック |
+| `POST` | `/api/parse` | 自然言語から状態遷移モデルを生成 |
+| `POST` | `/api/modify` | 既存モデルに変更依頼を適用し差分を返す |
+| `GET` | `/api/models` | 保存済みモデル一覧の取得 |
+| `POST` | `/api/models` | モデルの新規保存 |
+| `GET` | `/api/models/{id}` | モデルの詳細取得 |
+| `PUT` | `/api/models/{id}` | モデルの上書き更新 |
+| `POST` | `/api/models/{id}/duplicate` | モデルの複製 |
+| `DELETE` | `/api/models/{id}` | モデルの削除 |
+| `GET` | `/nginx-health` | フロントエンド nginx ヘルスチェック |
 
-### POST /api/parse リクエスト例
+## 保存済みモデル
 
-```json
-{
-  "text": "ユーザーは未ログイン状態から開始する。ログインボタンを押すと認証中になる。認証成功ならログイン済みになる。認証失敗ならエラー表示になる。"
-}
-```
+- **モデルの保存**: 現在のモデルに名前を付けて保存できます。
+- **一覧管理**: 保存されたモデルの一覧から、過去のモデルを読み込んだり、複製・削除したりできます。
+- **データの永続化**: Docker Compose 環境では `model-data` ボリュームを使用して SQLite データベースに保存されます。
+- **Azure 環境**: Azure デプロイ時は一時領域（`/tmp`）に保存されるため、再デプロイや再起動でデータが消去されることに注意してください。詳細は [docs/azure-deployment.md](docs/azure-deployment.md) を参照してください。
 
-## Azure へのデプロイ
+## 開発・テスト
 
-### Azure Container Apps（推奨）
-
-```bash
-# リソースグループ作成
-az group create --name rg-state-machine --location japaneast
-
-# Container Registry 作成
-az acr create --resource-group rg-state-machine --name statemachineacr --sku Basic
-
-# イメージをビルドして push
-az acr build --registry statemachineacr --image state-machine-backend:latest ./backend
-az acr build --registry statemachineacr --image state-machine-frontend:latest ./frontend
-
-# Container Apps 環境作成
-az containerapp env create \
-  --name state-machine-env \
-  --resource-group rg-state-machine \
-  --location japaneast
-
-# バックエンドデプロイ
-az containerapp create \
-  --name state-machine-backend \
-  --resource-group rg-state-machine \
-  --environment state-machine-env \
-  --image statemachineacr.azurecr.io/state-machine-backend:latest \
-  --target-port 8000 \
-  --ingress internal \
-  --env-vars AZURE_OPENAI_ENDPOINT=<your-endpoint> AZURE_OPENAI_API_KEY=secretref:openai-key AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini AZURE_OPENAI_API_VERSION=2024-10-21
-
-# フロントエンドデプロイ
-az containerapp create \
-  --name state-machine-frontend \
-  --resource-group rg-state-machine \
-  --environment state-machine-env \
-  --image statemachineacr.azurecr.io/state-machine-frontend:latest \
-  --target-port 3000 \
-  --ingress external
-```
-
-> **注意**: 本番環境では `AZURE_OPENAI_API_KEY` を Azure Key Vault または Container Apps Secrets で管理してください。環境変数に平文で渡さないでください。
-
-### Azure App Service（代替）
-
-Dockerfile をそのまま使用して、Azure App Service (Linux コンテナー) にデプロイ可能です。
-
-## 開発環境での起動（Docker なし）
-
-### バックエンド
+### バックエンド (Python)
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-cp ../.env.example ../.env  # API キーを設定
-uvicorn app.main:app --reload --port 8000
+pip install -r requirements.txt -r requirements-test.txt
+pytest
 ```
 
-### フロントエンド
+### フロントエンド (React)
 
 ```bash
 cd frontend
 npm install
-npm run dev  # http://localhost:3000 で起動
+npm run typecheck  # 型チェック
+npm run test       # ユニットテスト
+npm run e2e        # Playwright による E2E テスト
 ```
 
 ## 技術スタック
 
 | レイヤー | 技術 |
 |---------|------|
-| バックエンド | Python 3.11 + FastAPI + uvicorn |
+| 言語 | Python 3.11, TypeScript |
+| バックエンド | FastAPI, Pydantic v2, SQLAlchemy 2.0 |
+| フロントエンド | React 18, Vite, Axios |
 | AI | Azure OpenAI (gpt-4o-mini) |
-| フロントエンド | React 18 + TypeScript + Vite |
+| データベース | SQLite |
 | 状態遷移図 | Mermaid.js |
-| コンテナ | Docker + Docker Compose |
-| フロントエンドサーブ | nginx |
+| テスト | pytest, Vitest, Testing Library, Playwright |
+| インフラ | Docker, nginx |
+
+## Azure へのデプロイ
+
+詳細な手順やチェックリストについては、`docs/` ディレクトリのドキュメントを参照してください。
+
+- [Azure デプロイ手順書](docs/azure-deployment.md)
+- [デプロイ前チェックリスト](docs/azure-deploy-checklist.md)
+- [Azure ヘルスチェック仕様](docs/azure-health-checks.md)
 
 ## 状態遷移図の見方
 
-状態遷移図には以下の視覚的な表現が含まれます。
-
 ### 状態の強調表示
 
-| 表示色 | 意味 |
-|--------|------|
-| 橙色 (オレンジ) の枠 | 現在の親状態 |
-| 黄色の背景 | 現在の子状態 |
+- **オレンジ色の枠**: 現在の親状態
+- **黄色の背景**: 現在の子状態
 
 ### 遷移ラベルのプレフィックス
 
-| プレフィックス | 遷移種別 | 説明 |
-|---------------|----------|------|
-| (なし) | 通常遷移 | 主工程の前進遷移 |
-| ↩ | 戻り遷移 | 前の状態に戻る再試行など |
-| ↗ | 親状態またぎ遷移 | 異なる親状態をまたぐ遷移 |
-| ⚡ | 割り込み遷移 | 一時停止・例外・保守への割り込み |
-| ↺ | 復帰遷移 | 割り込みから前の状態へ戻る (PREVIOUS) |
+- (なし): 通常遷移
+- `↩`: 戻り遷移
+- `↗`: 親状態またぎ遷移
+- `⚡`: 割り込み遷移
+- `↺`: 復帰遷移（`$PREVIOUS` による復帰）
 
-### 親状態内の [*]
-
-各親状態ブロック内の [*] -> は初期子状態を示します。
-
-## 表示切り替え機能
-
-状態遷移図パネルの上部に表示モード選択ボタンがあります。目的に応じてモードを切り替えてください。
+### 表示モード切り替え
 
 | モード | 表示内容 |
 |--------|----------|
-| 全体 | すべての状態・遷移を表示（デフォルト） |
-| 現在の親状態 | 現在いる親状態とその周辺の状態・遷移のみ表示 |
-| 主工程 | 正常系の主工程（isInterrupt でない状態）のみ表示 |
-| 例外・割り込み | 割り込み・例外遷移（isInterrupt 親状態）に関係する遷移を表示 |
-| 保守 | 保守状態に関係する遷移を表示（stateCategory 設定時のみ区別） |
-
-表示モードを切り替えても、現在のシミュレーション状態・履歴は変わりません。
+| 全体 | すべての状態・遷移を表示 |
+| 現在の親状態 | 現在の親状態とその子状態、関連する遷移を表示 |
+| 主工程 | `isInterrupt` な親状態や復帰遷移を除外して表示 |
+| 例外・割り込み | `isInterrupt` な親状態に関連する遷移を表示 |
+| 保守 | `isInterrupt` かつ `stateCategory` が `maintenance` の親状態に関わる遷移を表示 |
