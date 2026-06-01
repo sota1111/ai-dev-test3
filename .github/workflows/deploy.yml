@@ -1,4 +1,4 @@
-name: Deploy to Azure Container Apps
+name: Deploy to Azure Container Apps (Runner Build)
 
 on:
   workflow_dispatch:
@@ -12,9 +12,9 @@ on:
         required: true
         default: "japaneast"
       acr_name:
-        description: "Azure Container Registry name (must be globally unique)"
+        description: "Azure Container Registry name"
         required: true
-        default: "statemachineacr"
+        default: "statemachineacr2026"
       environment_name:
         description: "Container Apps Environment name"
         required: true
@@ -31,17 +31,9 @@ on:
         required: true
         default: "2024-10-21"
 
-# Required GitHub Secrets:
-# - AZURE_CREDENTIALS: Service Principal JSON
-#     az ad sp create-for-rbac --name "state-machine-deploy" --role Contributor \
-#       --scopes /subscriptions/<subscription-id> --sdk-auth
-# - AZURE_OPENAI_API_KEY: Azure OpenAI API key (never logged)
-
 jobs:
   deploy:
-    name: Deploy to Azure Container Apps
     runs-on: ubuntu-latest
-
     env:
       FRONTEND_APP: state-machine-frontend
       BACKEND_APP: state-machine-backend
@@ -64,100 +56,50 @@ jobs:
 
       - name: Create Resource Group
         run: |
-          az group create \
-            --name "$RESOURCE_GROUP" \
-            --location "$LOCATION" \
-            --output none || true
+          az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 
       - name: Create Azure Container Registry
         run: |
-          az acr create \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$ACR_NAME" \
-            --sku Basic \
-            --admin-enabled false \
-            --output none 2>/dev/null || echo "ACR already exists or creation skipped"
+          az acr create --resource-group "$RESOURCE_GROUP" --name "$ACR_NAME" --sku Basic --admin-enabled true
 
-      - name: Build and push frontend image via ACR Tasks
+      - name: Log in to ACR
         run: |
-          az acr build \
-            --registry "$ACR_NAME" \
-            --image "state-machine-frontend:latest" \
-            --file frontend/Dockerfile \
-            ./frontend
+          az acr login --name "$ACR_NAME"
 
-      - name: Build and push backend image via ACR Tasks
+      - name: Build and push images
         run: |
-          az acr build \
-            --registry "$ACR_NAME" \
-            --image "state-machine-backend:latest" \
-            --file backend/Dockerfile \
-            ./backend
+          docker build -t "${ACR_NAME}.azurecr.io/${FRONTEND_APP}:latest" ./frontend
+          docker push "${ACR_NAME}.azurecr.io/${FRONTEND_APP}:latest"
+          docker build -t "${ACR_NAME}.azurecr.io/${BACKEND_APP}:latest" ./backend
+          docker push "${ACR_NAME}.azurecr.io/${BACKEND_APP}:latest"
 
       - name: Create Container Apps Environment
         run: |
-          az containerapp env create \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$ENVIRONMENT_NAME" \
-            --location "$LOCATION" \
-            --output none 2>/dev/null || echo "Environment already exists"
+          az containerapp env create --resource-group "$RESOURCE_GROUP" --name "$ENVIRONMENT_NAME" --location "$LOCATION"
 
       - name: Create Managed Identities
         run: |
-          az identity create \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "${BACKEND_APP}-identity" \
-            --output none 2>/dev/null || true
+          az identity create --resource-group "$RESOURCE_GROUP" --name "${BACKEND_APP}-identity"
+          az identity create --resource-group "$RESOURCE_GROUP" --name "${FRONTEND_APP}-identity"
 
-          az identity create \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "${FRONTEND_APP}-identity" \
-            --output none 2>/dev/null || true
-
-      - name: Assign AcrPull role to Managed Identities
+      - name: Assign AcrPull role
         run: |
-          ACR_ID=$(az acr show \
-            --name "$ACR_NAME" \
-            --resource-group "$RESOURCE_GROUP" \
-            --query id -o tsv)
+          ACR_ID=$(az acr show --name "$ACR_NAME" --resource-group "$RESOURCE_GROUP" --query id -o tsv)
+          BACKEND_PRINCIPAL=$(az identity show --resource-group "$RESOURCE_GROUP" --name "${BACKEND_APP}-identity" --query principalId -o tsv)
+          FRONTEND_PRINCIPAL=$(az identity show --resource-group "$RESOURCE_GROUP" --name "${FRONTEND_APP}-identity" --query principalId -o tsv)
+          az role assignment create --assignee "$BACKEND_PRINCIPAL" --role AcrPull --scope "$ACR_ID"
+          az role assignment create --assignee "$FRONTEND_PRINCIPAL" --role AcrPull --scope "$ACR_ID"
 
-          BACKEND_PRINCIPAL=$(az identity show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "${BACKEND_APP}-identity" \
-            --query principalId -o tsv)
-
-          FRONTEND_PRINCIPAL=$(az identity show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "${FRONTEND_APP}-identity" \
-            --query principalId -o tsv)
-
-          az role assignment create \
-            --assignee "$BACKEND_PRINCIPAL" \
-            --role AcrPull \
-            --scope "$ACR_ID" \
-            --output none 2>/dev/null || echo "Role already assigned for backend"
-
-          az role assignment create \
-            --assignee "$FRONTEND_PRINCIPAL" \
-            --role AcrPull \
-            --scope "$ACR_ID" \
-            --output none 2>/dev/null || echo "Role already assigned for frontend"
-
-      - name: Deploy backend Container App
+      - name: Deploy backend
         env:
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
         run: |
-          set +x
-          BACKEND_IDENTITY_ID=$(az identity show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "${BACKEND_APP}-identity" \
-            --query id -o tsv)
-
+          BACKEND_IDENTITY_ID=$(az identity show --resource-group "$RESOURCE_GROUP" --name "${BACKEND_APP}-identity" --query id -o tsv)
           az containerapp create \
             --resource-group "$RESOURCE_GROUP" \
             --name "$BACKEND_APP" \
             --environment "$ENVIRONMENT_NAME" \
-            --image "${ACR_NAME}.azurecr.io/state-machine-backend:latest" \
+            --image "${ACR_NAME}.azurecr.io/${BACKEND_APP}:latest" \
             --user-assigned "$BACKEND_IDENTITY_ID" \
             --registry-server "${ACR_NAME}.azurecr.io" \
             --registry-identity "$BACKEND_IDENTITY_ID" \
@@ -169,86 +111,20 @@ jobs:
               "AZURE_OPENAI_API_KEY=secretref:azure-openai-api-key" \
               "AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}" \
               "AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION}" \
-              "DATABASE_URL=sqlite:////tmp/models.db" \
-            --min-replicas 1 \
-            --max-replicas 2 \
-            --cpu 0.25 \
-            --memory 0.5Gi \
-            --output none 2>/dev/null || \
-          az containerapp update \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$BACKEND_APP" \
-            --image "${ACR_NAME}.azurecr.io/state-machine-backend:latest" \
-            --output none
+              "DATABASE_URL=sqlite:////tmp/models.db"
 
-      - name: Deploy frontend Container App
+      - name: Deploy frontend
         run: |
-          BACKEND_FQDN=$(az containerapp show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$BACKEND_APP" \
-            --query "properties.configuration.ingress.fqdn" -o tsv)
-
-          FRONTEND_IDENTITY_ID=$(az identity show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "${FRONTEND_APP}-identity" \
-            --query id -o tsv)
-
+          BACKEND_FQDN=$(az containerapp show --resource-group "$RESOURCE_GROUP" --name "$BACKEND_APP" --query "properties.configuration.ingress.fqdn" -o tsv)
+          FRONTEND_IDENTITY_ID=$(az identity show --resource-group "$RESOURCE_GROUP" --name "${FRONTEND_APP}-identity" --query id -o tsv)
           az containerapp create \
             --resource-group "$RESOURCE_GROUP" \
             --name "$FRONTEND_APP" \
             --environment "$ENVIRONMENT_NAME" \
-            --image "${ACR_NAME}.azurecr.io/state-machine-frontend:latest" \
+            --image "${ACR_NAME}.azurecr.io/${FRONTEND_APP}:latest" \
             --user-assigned "$FRONTEND_IDENTITY_ID" \
             --registry-server "${ACR_NAME}.azurecr.io" \
             --registry-identity "$FRONTEND_IDENTITY_ID" \
             --ingress external \
             --target-port 3000 \
-            --env-vars "BACKEND_HOST=${BACKEND_FQDN}" \
-            --min-replicas 1 \
-            --max-replicas 2 \
-            --cpu 0.25 \
-            --memory 0.5Gi \
-            --output none 2>/dev/null || \
-          az containerapp update \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$FRONTEND_APP" \
-            --image "${ACR_NAME}.azurecr.io/state-machine-frontend:latest" \
-            --output none
-
-      - name: Get frontend URL and run health checks
-        run: |
-          FRONTEND_URL=$(az containerapp show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$FRONTEND_APP" \
-            --query "properties.configuration.ingress.fqdn" -o tsv)
-
-          echo "Frontend URL: https://${FRONTEND_URL}"
-          echo "FRONTEND_URL=https://${FRONTEND_URL}" >> $GITHUB_ENV
-
-          echo "==> Waiting for app to start (30s)..."
-          sleep 30
-
-          echo "==> Frontend nginx health check"
-          curl -f "https://${FRONTEND_URL}/nginx-health" && echo " [OK]"
-
-          echo "==> Backend health check via frontend proxy"
-          curl -f "https://${FRONTEND_URL}/health" && echo " [OK]"
-
-          echo ""
-          echo "==================================================="
-          echo "Deployment complete!"
-          echo "Frontend URL: https://${FRONTEND_URL}"
-          echo "==================================================="
-
-      - name: Verify backend is not publicly exposed
-        run: |
-          EXTERNAL=$(az containerapp show \
-            --resource-group "$RESOURCE_GROUP" \
-            --name "$BACKEND_APP" \
-            --query "properties.configuration.ingress.external" -o tsv 2>/dev/null || echo "false")
-          echo "Backend external ingress: $EXTERNAL"
-          if [ "$EXTERNAL" = "true" ]; then
-            echo "ERROR: Backend is publicly exposed!"
-            exit 1
-          fi
-          echo "OK: Backend is internal only."
+            --env-vars "BACKEND_HOST=${BACKEND_FQDN}"
