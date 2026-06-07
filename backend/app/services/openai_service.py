@@ -34,6 +34,10 @@ SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
 ルール:
 - parentStates には、複数の状態をまとめる「グループ（親状態）」が存在する場合のみ値を入れてください。
   階層がない場合は空配列 [] を返してください。
+- 4つ以上の状態があり、受付、確認、準備、作業、完了、例外対応などの工程に分けられる場合は、
+  必ず工程単位の親状態を作成してください。親状態名は「受付・確認」「作業準備」「実行・対応」「完了処理」
+  のように、子状態群の意味が分かる名前にしてください。
+- 複数の担当者、部署、会社、役割にまたがる場合は、担当境界や工程境界に沿って親状態を作成してください。
 - isInterrupt: 割込み状態（例: 一時停止中、異常復旧中）には "isInterrupt": true を設定してください。
   割込み状態とは、別の親状態から中断してその状態に入り、完了後に元の状態へ戻るような状態です。
 - $PREVIOUS: 「停止前の状態に戻る」「異常前の状態に戻る」といった動的な戻り遷移には、
@@ -89,6 +93,8 @@ MODIFY_SYSTEM_PROMPT = """あなたは状態遷移の専門家です。
 - ユーザーが依頼した内容のみを反映すること。
 - diff には変更内容のみを記録すること（変更のない項目は空配列）。
 - parentStates には、複数の状態をまとめる「グループ（親状態）」が存在する場合のみ値を入れること。階層がない場合は空配列 [] を返すこと。
+- 状態追加や遷移追加により、4つ以上の状態が工程単位に分けられる場合は、必要に応じて親状態を追加・更新すること。
+- 複数の担当者、部署、会社、役割にまたがる場合は、担当境界や工程境界に沿って親状態を作成・更新すること。
 - isInterrupt: 割込み状態（例: 一時停止中、異常復旧中）には "isInterrupt": true を設定してください。
   割込み状態とは、別の親状態から中断してその状態に入り、完了後に元の状態へ戻るような状態です。
 - $PREVIOUS: 「停止前の状態に戻る」「異常前の状態に戻る」といった動的な戻り遷移には、
@@ -253,6 +259,81 @@ def build_empty_diff() -> dict:
         "removedParentStates": [],
         "modifiedParentStates": [],
     }
+
+
+def ensure_parent_states(machine: dict) -> dict:
+    if machine.get("parentStates") or len(machine.get("states", [])) < 4:
+        return machine
+
+    states = machine.get("states", [])
+    transitions = machine.get("transitions", [])
+    owners = machine.get("stateOwners", {})
+
+    ordered_states: list[str] = []
+    current = machine.get("initialState")
+    seen: set[str] = set()
+    while current and current not in seen and current in states:
+        ordered_states.append(current)
+        seen.add(current)
+        next_transition = next(
+            (
+                transition for transition in transitions
+                if transition.get("from") == current
+                and transition.get("to") in states
+                and transition.get("to") not in seen
+            ),
+            None,
+        )
+        current = next_transition.get("to") if next_transition else None
+
+    for state in states:
+        if state not in seen:
+            ordered_states.append(state)
+
+    groups: list[list[str]] = []
+    current_group: list[str] = []
+    current_owner: str | None = None
+
+    for state in ordered_states:
+        owner = owners.get(state)
+        if (
+            current_group
+            and owner
+            and current_owner
+            and owner != current_owner
+        ):
+            groups.append(current_group)
+            current_group = []
+        current_group.append(state)
+        current_owner = owner or current_owner
+        if len(current_group) >= 4:
+            groups.append(current_group)
+            current_group = []
+            current_owner = None
+
+    if current_group:
+        groups.append(current_group)
+
+    if len(groups) <= 1:
+        midpoint = max(2, len(ordered_states) // 2)
+        groups = [ordered_states[:midpoint], ordered_states[midpoint:]]
+
+    parent_states = []
+    for index, group in enumerate(groups, start=1):
+        if not group:
+            continue
+        group_owners = [owners[state] for state in group if owners.get(state)]
+        owner_prefix = group_owners[0] if group_owners and all(owner == group_owners[0] for owner in group_owners) else None
+        name = f"{owner_prefix}工程" if owner_prefix else f"工程{index}"
+        parent_states.append({
+            "name": name,
+            "children": group,
+            "initialChild": group[0],
+            "isInterrupt": False,
+        })
+
+    machine["parentStates"] = parent_states
+    return machine
 
 
 def has_diff(diff: dict) -> bool:
@@ -443,7 +524,7 @@ def parse_state_machine(text: str) -> dict:
         raise
 
     content = response.choices[0].message.content
-    return json.loads(content)
+    return ensure_parent_states(json.loads(content))
 
 
 def modify_state_machine(current: dict, request: str) -> dict:
@@ -478,4 +559,6 @@ def modify_state_machine(current: dict, request: str) -> dict:
         return result
 
     content = response.choices[0].message.content
-    return json.loads(content)
+    result = json.loads(content)
+    result["updatedMachine"] = ensure_parent_states(result["updatedMachine"])
+    return result
