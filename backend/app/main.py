@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.parse import router as parse_router
 from app.api.modify import router as modify_router
 from app.api.models import router as models_router
+from app.api.auth import router as auth_router
 from app.db import engine, Base
 import app.models.saved_model  # noqa: F401  register ORM model
 
@@ -33,3 +34,4 @@ async def health():
 app.include_router(parse_router, prefix="/api")
 app.include_router(modify_router, prefix="/api")
 app.include_router(models_router, prefix="/api")
+app.include_router(auth_router, prefix="/api")

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react"
 import axios from "axios"
+import { LoginPage } from "./components/LoginPage"
 import { InputPanel } from "./components/InputPanel"
 import { DiagramPanel } from "./components/DiagramPanel"
 import { ControlPanel } from "./components/ControlPanel"
@@ -22,6 +23,7 @@ function isParentName(name: string, parentStates: ParentState[]): boolean {
 }
 
 export default function App() {
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem("auth_token"))
   const [stateMachine, setStateMachine] = useState<StateMachine | null>(null)
   const [currentState, setCurrentState] = useState("")
   const [currentParentState, setCurrentParentState] = useState<string | null>(null)
@@ -40,6 +42,16 @@ export default function App() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [error, setError] = useState("")
 
+  const handleLogin = (newToken: string) => {
+    localStorage.setItem("auth_token", newToken)
+    setToken(newToken)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem("auth_token")
+    setToken(null)
+  }
+
   function getErrorMessage(error: unknown): string {
     if (axios.isAxiosError(error)) {
       const detail = error.response?.data?.detail
@@ -51,13 +63,14 @@ export default function App() {
   }
 
   const loadModelList = useCallback(async () => {
+    if (!token) return
     try {
       const models = await fetchModels()
       setSavedModels(models)
     } catch {
       // ignore
     }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     loadModelList()
@@ -233,9 +246,16 @@ export default function App() {
     }
   }
 
+  if (!token) {
+    return <LoginPage onLogin={handleLogin} />
+  }
+
   return (
     <div className={styles.app}>
-      <h1>Simulator</h1>
+      <header className={styles.header}>
+        <h1>Simulator</h1>
+        <button onClick={handleLogout} className={styles.logoutBtn}>ログアウト</button>
+      </header>
       {error && <div className={styles.error}>{error}</div>}
       <main className={styles.main}>
         <div className={styles.inputCol}>
