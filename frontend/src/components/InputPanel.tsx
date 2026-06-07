@@ -1,3 +1,4 @@
+import { useState } from "react"
 import styles from "./InputPanel.module.css"
 
 const SAMPLES = [
@@ -183,20 +184,39 @@ interface Props {
 }
 
 export function InputPanel({ value, onChange, onGenerate, loading }: Props) {
+  const [sampleMenuOpen, setSampleMenuOpen] = useState(false)
+
   return (
     <div className={styles.panel}>
       <h2 className={styles.title}>初期条件入力</h2>
-      <div className={styles.sampleButtons}>
-        {SAMPLES.map((sample) => (
-          <button
-            key={sample.label}
-            className={styles.sampleBtn}
-            onClick={() => onChange(sample.text)}
-            type="button"
-          >
-            {sample.label}
-          </button>
-        ))}
+      <div className={styles.sampleMenu}>
+        <button
+          className={styles.sampleBtn}
+          onClick={() => setSampleMenuOpen(open => !open)}
+          type="button"
+          aria-expanded={sampleMenuOpen}
+          aria-haspopup="menu"
+        >
+          サンプル
+        </button>
+        {sampleMenuOpen && (
+          <div className={styles.sampleOptions} role="menu">
+            {SAMPLES.map((sample) => (
+              <button
+                key={sample.label}
+                className={styles.sampleOption}
+                onClick={() => {
+                  onChange(sample.text)
+                  setSampleMenuOpen(false)
+                }}
+                type="button"
+                role="menuitem"
+              >
+                {sample.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <textarea
         className={styles.textarea}

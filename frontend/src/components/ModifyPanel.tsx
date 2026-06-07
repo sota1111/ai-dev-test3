@@ -36,21 +36,39 @@ interface Props {
 
 export function ModifyPanel({ onModify, loading }: Props) {
   const [request, setRequest] = useState("")
+  const [sampleMenuOpen, setSampleMenuOpen] = useState(false)
 
   return (
     <div className={styles.panel}>
       <h2 className={styles.title}>状態遷移を変更</h2>
-      <div className={styles.sampleButtons}>
-        {SAMPLES.map((sample) => (
-          <button
-            key={sample.label}
-            className={styles.sampleBtn}
-            onClick={() => setRequest(sample.text)}
-            type="button"
-          >
-            {sample.label}
-          </button>
-        ))}
+      <div className={styles.sampleMenu}>
+        <button
+          className={styles.sampleBtn}
+          onClick={() => setSampleMenuOpen(open => !open)}
+          type="button"
+          aria-expanded={sampleMenuOpen}
+          aria-haspopup="menu"
+        >
+          サンプル
+        </button>
+        {sampleMenuOpen && (
+          <div className={styles.sampleOptions} role="menu">
+            {SAMPLES.map((sample) => (
+              <button
+                key={sample.label}
+                className={styles.sampleOption}
+                onClick={() => {
+                  setRequest(sample.text)
+                  setSampleMenuOpen(false)
+                }}
+                type="button"
+                role="menuitem"
+              >
+                {sample.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <textarea
         className={styles.textarea}
